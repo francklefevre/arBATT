@@ -246,3 +246,7 @@ doc/manuel_AC.txt
 
 # Node.js dependencies (jsdom for headless DOM tests)
 node_modules/
+
+# Private agent-instruction files (kept local only, never on GitHub)
+AGENTS.md
+CLAUDE.md
