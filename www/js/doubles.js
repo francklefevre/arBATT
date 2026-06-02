@@ -326,6 +326,32 @@
     return true;
   };
 
+  /**
+   * Remove the LAST card of player `p` (0..3) — correction of a mistake.
+   * Reverses the penalty point(s) from the OPPOSING pair's current score
+   * (clamped at 0). Does not "un-win" a game; use undo() for that.
+   */
+  DoublesScorer.prototype.removeSanction = function (p) {
+    if (p < 0 || p > 3) { return null; }
+    if (this.state.infractions[p] <= 0) {
+      log(5014, "No card to remove for " + this.config.playerNames[p]);
+      return null;
+    }
+    this._snapshot();
+    var n = this.state.infractions[p];
+    var reversed = sanctionForCount(n).penalty;
+    var opponentTeam = 1 - teamOf(p);
+    this.state.points[opponentTeam] =
+      Math.max(0, this.state.points[opponentTeam] - reversed);
+    this.state.infractions[p] = n - 1;
+    this.state.refereeCalled = this.state.infractions.some(function (c) {
+      return c >= 4;
+    });
+    log(5015, "Removed card from " + this.config.playerNames[p] + " -> level " +
+      (n - 1) + ", reversed " + reversed + " penalty point(s)");
+    return { removedLevel: n, penaltyReversed: reversed };
+  };
+
   DoublesScorer.prototype.undo = function () {
     if (this._undo.length === 0) { log(5007, "Nothing to undo"); return false; }
     this.state = this._undo.pop();

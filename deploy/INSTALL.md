@@ -40,6 +40,69 @@ un `index.html` est donc servi **directement**. Le `.htaccess` fourni dans
 > Ne nommez pas le dossier comme une page/permalien WordPress existant
 > (`/arbitrage/` si une page porte déjà ce slug, par exemple).
 
+## Option A-bis — Mise à jour par `git pull` en SSH (recommandé si vous avez SSH)
+
+Vous avez un **accès SSH** au serveur ? On peut faire en sorte qu'une **seule
+commande `git pull`** mette l'appli à jour.
+
+### Méthode recommandée : dépôt hors du web + lien symbolique
+
+On clone le dépôt **en dehors** de la racine web (pour n'exposer que `www/`), et
+on fait pointer le dossier public vers `www/` par un lien symbolique.
+
+```bash
+# --- installation (une seule fois) ---
+cd ~                                # au-dessus de ~/www
+git clone https://github.com/francklefevre/arBATT.git arbatt-src
+ln -s ~/arbatt-src/www ~/www/arbatt
+
+# L'appli est alors servie sur :  https://VOTRE-SITE/arbatt/
+```
+
+```bash
+# --- mise à jour (LA commande git) ---
+cd ~/arbatt-src && git pull
+```
+
+Le `git pull` met à jour `www/` en place ; comme le dossier public est un lien
+vers `www/`, **l'appli est mise à jour instantanément**. Le dépôt étant public,
+aucun identifiant n'est nécessaire. `www/app-config.json` étant versionné,
+l'arbre de travail reste propre (pas de conflit au `pull`).
+
+> Si votre hébergement **ne suit pas les liens symboliques** (rare, mais OVH
+> mutualisé peut être capricieux selon la config), utilisez la méthode copie
+> ci-dessous.
+
+### Variante sans lien symbolique : le script `deploy/update.sh`
+
+```bash
+# installation (une fois)
+cd ~
+git clone https://github.com/francklefevre/arBATT.git arbatt-src
+
+# mise à jour (une commande) — pull + régénération + copie vers le dossier public
+~/arbatt-src/deploy/update.sh ~/www/arbatt
+```
+
+`update.sh` fait `git pull`, régénère `www/app-config.json` depuis
+`config/param.json` (si `python3` est présent) puis copie `www/` vers le dossier
+indiqué. URL : `https://VOTRE-SITE/arbatt/`.
+
+### Variante « tout simple » : cloner directement dans le web
+
+```bash
+cd ~/www
+git clone https://github.com/francklefevre/arBATT.git arbatt
+# URL :  https://VOTRE-SITE/arbatt/www/      (mise à jour : cd ~/www/arbatt && git pull)
+```
+
+Ici l'URL contient `/www/` (le QR code la « cache » de toute façon) et les
+fichiers de dev du dépôt (public) sont visibles — sans gravité, mais moins
+propre que le lien symbolique.
+
+> **Dépôt privé ?** Utilisez une **clé SSH de déploiement** ou un token, et
+> clonez via `git@github.com:francklefevre/arBATT.git`.
+
 ## Option B — Sous-domaine dédié
 
 Plus propre et isolé : créez un sous-domaine (ex. `arbatt.mon-club.fr`) pointant

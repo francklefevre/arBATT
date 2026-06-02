@@ -4,6 +4,31 @@ Free software developed by Franck LEFEVRE for K1 ( https://k1info.com ),
 with the help of his team of kind and playful robots.
 ============================================================================
 
+2026-06-02 18:45 — v0.1.9 — Remove a card + git-based SSH update + dotfile guard.
+  Card removal (umpire mistake correction):
+    - scorer.js / doubles.js: new removeSanction(player) — decrements the
+      infraction count and reverses the penalty point(s) of that level from the
+      opponent's current score (clamped at 0); recomputes refereeCalled. Snapshot
+      so it is itself undoable. (Does not "un-win" a game already ended by a
+      penalty — use undo() for that; documented.)
+    - tests/test_sanctions.js: remove yellow (nothing reversed), remove level-2
+      (penalty reversed), referee flag cleared, doubles removal. Pass.
+    - UI: sanction overlay rows now have "− Retirer" + "Sanctionner"; removal
+      shows a confirmation line and refreshes tallies. test_ui_dom updated.
+  Deployment by git over SSH (user has SSH to the OVH www dir):
+    - deploy/update.sh (one-command pull + app-config refresh + copy to the web
+      folder) and an INSTALL.md section: recommended symlink setup so a single
+      `git pull` updates the live app; copy-script and direct-clone fallbacks.
+      Confirmed the host's WordPress .htaccess (!-f/!-d) serves a real subfolder
+      directly, so /arbatt/ is not routed through WordPress.
+  Hardening:
+    - server.py now returns 404 for hidden files (dotfiles, e.g. .htaccess) so
+      the hermetic dev server never discloses config artifacts (event #1013).
+  Tests: npm test -> 7/7 PASS. Config: version 0.1.9; SW -> arbatt-v0_1_9.
+  Deploy impact: NEW deploy/update.sh; INSTALL.md gains the SSH/git workflow;
+    www/.htaccess unchanged; app-config.json regenerated to 0.1.9. server.py
+    change is dev-only. kurt.json unchanged.
+
 2026-06-02 18:30 — v0.1.8 — UI display fixes + static deployment kit.
   Display fixes (field feedback):
     - The server was shown twice (announce "(service A sur B)" + the service-info

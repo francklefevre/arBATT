@@ -193,13 +193,26 @@ async function run() {
   ok(rows.length === 2, 'sanction overlay lists both players (singles)');
 
   // Sanction Alice twice: 1st = yellow (no point), 2nd = +1 to Bob.
-  let aliceBtn = rows[0].querySelector('button');
-  click(aliceBtn);
+  // Each row has two buttons: [0] = "− Retirer", [1] = "Sanctionner".
+  function sanctionBtn(rowIdx) {
+    return doc.querySelectorAll('#sanction-list .sanction-row')[rowIdx]
+      .querySelectorAll('button')[1];
+  }
+  click(sanctionBtn(0));
   ok($('cards-0').textContent === '🟨', 'first sanction shows a yellow card');
   ok($('points-1').textContent === '0', 'first sanction gives no point');
-  click(doc.querySelectorAll('#sanction-list .sanction-row')[0].querySelector('button'));
+  click(sanctionBtn(0));
   ok($('points-1').textContent === '1', 'second sanction: +1 point to opponent');
   ok($('cards-0').textContent === '🟨🟥', 'second sanction shows yellow+red');
+
+  // Remove a card put by mistake: "− Retirer" reverses card + penalty point.
+  let row0 = doc.querySelectorAll('#sanction-list .sanction-row')[0];
+  let removeBtn = row0.querySelectorAll('button')[0]; // "− Retirer" is first
+  click(removeBtn);
+  ok($('cards-0').textContent === '🟨', 'remove: back to a single yellow card');
+  ok($('points-1').textContent === '0', 'remove: penalty point reversed');
+  click(doc.querySelectorAll('#sanction-list .sanction-row')[0].querySelectorAll('button')[0]);
+  ok($('cards-0').textContent === '', 'remove again: no card left');
 
   click($('sanction-close'));
   ok($('sanction').classList.contains('hidden'), 'sanction overlay closes');

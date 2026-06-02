@@ -66,6 +66,35 @@ s3.undo();
 ok(s3.view().points[1] === 0 && s3.view().infractions[0] === 1,
   'undo reverts the 2nd sanction (count and penalty point)');
 
+// --- remove a card (umpire mistake) ----------------------------------------
+let rm = new TTScorer({ playerNames: ['A', 'B'], firstServer: 0 });
+ok(rm.removeSanction(0) === null, 'remove with no card -> null');
+rm.sanction(0); // yellow (no point)
+let rr = rm.removeSanction(0);
+ok(rr.removedLevel === 1 && rr.penaltyReversed === 0, 'remove yellow: nothing reversed');
+ok(rm.view().infractions[0] === 0, 'remove yellow: count back to 0');
+
+rm.sanction(0); rm.sanction(0); // -> level 2, +1 to B
+ok(rm.view().points[1] === 1 && rm.view().infractions[0] === 2, 'before removal');
+rm.removeSanction(0); // back to level 1, reverse the +1
+ok(rm.view().points[1] === 0 && rm.view().infractions[0] === 1,
+  'remove level-2 card: penalty point reversed');
+
+// referee flag cleared when dropping back below the 4th infraction
+let rf = new TTScorer({ playerNames: ['A', 'B'], firstServer: 0 });
+rf.sanction(0); rf.sanction(0); rf.sanction(0); rf.sanction(0);
+ok(rf.view().refereeCalled === true, '4th infraction -> referee flag');
+rf.removeSanction(0);
+ok(rf.view().refereeCalled === false, 'removing the 4th clears the referee flag');
+
+// doubles removal reverses points to the opposing pair
+let rd = new DoublesScorer({ playerNames: ['X', 'Y', 'A', 'B'], firstServer: 0, firstReceiver: 3 });
+rd.sanction(2); rd.sanction(2); // +1 to team 0
+ok(rd.view().points[0] === 1, 'doubles: penalty applied');
+rd.removeSanction(2);
+ok(rd.view().points[0] === 0 && rd.view().infractions[2] === 1,
+  'doubles: removal reverses the penalty to the opposing pair');
+
 // --- doubles: penalty goes to the opposing pair ----------------------------
 let d = new DoublesScorer({
   playerNames: ['X', 'Y', 'A', 'B'], firstServer: 0, firstReceiver: 3

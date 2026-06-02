@@ -751,13 +751,25 @@
       who.className = "who";
       who.innerHTML = "<div>" + v.names[p] + "</div><div class='cards'>" +
         (cardsFor(v.infractions[p]) || "aucun carton") + "</div>";
+      var actions = document.createElement("div");
+      actions.className = "sanction-actions";
+
+      var rm = document.createElement("button");
+      rm.className = "btn-secondary";
+      rm.textContent = "− Retirer";
+      rm.disabled = v.finished || v.infractions[p] === 0;
+      rm.addEventListener("click", function () { applyRemove(p); });
+
       var btn = document.createElement("button");
       btn.className = "btn-secondary";
       btn.textContent = "Sanctionner";
       btn.disabled = v.finished;
       btn.addEventListener("click", function () { applySanction(p); });
+
+      actions.appendChild(rm);
+      actions.appendChild(btn);
       row.appendChild(who);
-      row.appendChild(btn);
+      row.appendChild(actions);
       list.appendChild(row);
     });
   }
@@ -777,6 +789,22 @@
     document.getElementById("sanction-state").textContent = msg;
     arbattLog("SCORE", 2050, "Sanction applied: " + msg);
     buildSanctionList(v); // refresh the displayed card tallies
+    render();
+  }
+
+  function applyRemove(p) {
+    if (!match) { return; }
+    var r = match.removeSanction(p);
+    if (!r) { return; }
+    var v = match.view();
+    var msg = "Carton retiré : " + v.names[p];
+    if (r.penaltyReversed > 0) {
+      msg += " (−" + r.penaltyReversed + " point" +
+        (r.penaltyReversed > 1 ? "s" : "") + " à l'adversaire)";
+    }
+    document.getElementById("sanction-state").textContent = msg;
+    arbattLog("SCORE", 2052, "Sanction removed: " + msg);
+    buildSanctionList(v);
     render();
   }
 

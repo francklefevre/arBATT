@@ -93,7 +93,9 @@ arBATT/
 │   └── icons/                  # Icônes PWA (svg + png 192/512/maskable)
 ├── dynamic/                # Données personnalisées (git-ignoré)
 ├── logs/                   # Tous les fichiers de logs (git-ignoré)
-├── deploy/INSTALL.md       # Guide de déploiement (WordPress, statique, QR)
+├── deploy/                 # Déploiement statique
+│   ├── INSTALL.md              # Guide (WordPress, statique, SSH/git, QR)
+│   └── update.sh               # Mise à jour one-command (git pull + copie)
 ├── package.json            # Scripts npm + dépendance de dev jsdom
 ├── tests/                  # Tests headless (Node)
 │   ├── run_all.js              # Lance toutes les suites (npm test)
@@ -165,6 +167,20 @@ python3 server.py   # écrit le fichier, puis Ctrl-C
 - `www/app-config.json` est **livré avec l'appli** (lu tel quel en statique).
 - `www/.htaccess` règle les types MIME sur Apache (ignoré ailleurs).
 - HTTPS est **obligatoire** pour le service worker (installation + hors-ligne).
+
+**Mise à jour par git en SSH** (si vous avez un accès SSH au serveur) : clonez
+le dépôt hors du web et liez `www/` au dossier public, puis une seule commande
+suffit pour mettre à jour :
+
+```bash
+# installation (une fois)
+cd ~ && git clone https://github.com/francklefevre/arBATT.git arbatt-src
+ln -s ~/arbatt-src/www ~/www/arbatt          # appli sur https://SITE/arbatt/
+# mise à jour
+cd ~/arbatt-src && git pull
+```
+
+(Variante sans symlink via `deploy/update.sh` : voir `deploy/INSTALL.md`.)
 
 ## Utilisation
 
@@ -266,7 +282,9 @@ L'échelle (manuel p.13) est appliquée automatiquement :
 
 Les cartons accumulés sont affichés sur chaque carte. En double, le compte est
 **par joueur** et les points de pénalité vont à la **paire adverse**. L'undo
-annule une sanction (carton **et** point de pénalité).
+annule une sanction (carton **et** point de pénalité). En cas d'erreur, le
+bouton **« − Retirer »** (dans l'overlay de sanction) enlève le dernier carton
+d'un joueur et **réannule le point de pénalité** correspondant.
 
 *Non encore couvert (voir [Feuille de route](#feuille-de-route))* : la
 chronométrie des manches.

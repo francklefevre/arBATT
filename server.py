@@ -116,6 +116,16 @@ def make_handler(config, logger):
                 self._send(403, b"403 Forbidden")
                 return
 
+            # Hidden files (dotfiles such as .htaccess) are never served: they
+            # are deployment/config artifacts, not public content. We answer 404
+            # so their very existence stays undisclosed.
+            rel = os.path.relpath(target, webroot)
+            if any(part.startswith(".") for part in rel.split(os.sep)
+                   if part not in (".", "..")):
+                logger.log("SECURITY", 1013, "Blocked hidden file: %r" % self.path)
+                self._send(404, b"404 Not Found")
+                return
+
             if not os.path.isfile(target):
                 logger.log("HTTP", 1002, "404 %s -> %s" % (self.path, target))
                 self._send(404, b"404 Not Found")

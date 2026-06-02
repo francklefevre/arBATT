@@ -325,6 +325,31 @@
     return true;
   };
 
+  /**
+   * Remove the LAST card of player `i` (correction of an umpire mistake).
+   * Decrements the infraction count and reverses the penalty point(s) that were
+   * awarded for that level (subtracted from the opponent's CURRENT score,
+   * clamped at 0). Note: it does not "un-win" a game that a penalty point may
+   * already have ended — use undo() for that. Returns a descriptor or null.
+   */
+  TTScorer.prototype.removeSanction = function (i) {
+    if (i !== 0 && i !== 1) { return null; }
+    if (this.state.infractions[i] <= 0) {
+      log(3012, "No card to remove for " + this.config.playerNames[i]);
+      return null;
+    }
+    this._snapshot();
+    var n = this.state.infractions[i];
+    var reversed = sanctionForCount(n).penalty;
+    this.state.points[1 - i] = Math.max(0, this.state.points[1 - i] - reversed);
+    this.state.infractions[i] = n - 1;
+    this.state.refereeCalled =
+      (this.state.infractions[0] >= 4 || this.state.infractions[1] >= 4);
+    log(3013, "Removed card from " + this.config.playerNames[i] + " -> level " +
+      (n - 1) + ", reversed " + reversed + " penalty point(s)");
+    return { removedLevel: n, penaltyReversed: reversed };
+  };
+
   /** Undo the last state-changing action. */
   TTScorer.prototype.undo = function () {
     if (this._undo.length === 0) {

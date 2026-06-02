@@ -253,6 +253,8 @@ legend { color: var(--accent); padding: 0 6px; }
 }
 .sanction-row .who { text-align: left; }
 .sanction-row .who .cards { font-size: .9rem; color: var(--muted); }
+.sanction-actions { display: flex; gap: 8px; }
+.sanction-actions button { padding: 10px 12px; white-space: nowrap; }
 
 /* Acceleration panel */
 .accel-panel {
