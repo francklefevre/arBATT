@@ -57,7 +57,7 @@ function loadApp() {
       ok: true,
       json: function () {
         return Promise.resolve({
-          version: '0.1.4', warmupSeconds: 120, timeoutSeconds: 60
+          version: '0.1.5', warmupSeconds: 120, timeoutSeconds: 60
         });
       }
     });
@@ -96,7 +96,7 @@ async function run() {
 
   // --- boot ---------------------------------------------------------------
   ok(visible('screen-menu'), 'menu screen visible at boot');
-  ok($('version').textContent === 'v0.1.4', 'version banner from app-config');
+  ok($('version').textContent === 'v0.1.5', 'version banner from app-config');
   ok($('firstServer').options.length === 2, 'singles toss has 2 server options');
 
   // --- "période d'adaptation" rename + "déroulé de la partie" screen -------
@@ -198,6 +198,32 @@ async function run() {
   ok($('accel-count').textContent === '1', 'return counter increments');
   click($('card-0'));
   ok($('accel-count').textContent === '0', 'card tap resets the return counter');
+
+  // ======================== CARDS / SANCTIONS (UI) ========================
+  click($('btn-quit'));
+  click($('screen-menu').querySelector("[data-target='screen-newmatch']"));
+  setRadio(doc.querySelector("input[name=mode][value=singles]"));
+  $('nameA').value = 'Alice';
+  $('nameB').value = 'Bob';
+  $('nameA').dispatchEvent(new win.Event('input', { bubbles: true }));
+  submit();
+
+  click($('btn-carton'));
+  ok(!$('sanction').classList.contains('hidden'), 'sanction overlay opens');
+  let rows = doc.querySelectorAll('#sanction-list .sanction-row');
+  ok(rows.length === 2, 'sanction overlay lists both players (singles)');
+
+  // Sanction Alice twice: 1st = yellow (no point), 2nd = +1 to Bob.
+  let aliceBtn = rows[0].querySelector('button');
+  click(aliceBtn);
+  ok($('cards-0').textContent === '🟨', 'first sanction shows a yellow card');
+  ok($('points-1').textContent === '0', 'first sanction gives no point');
+  click(doc.querySelectorAll('#sanction-list .sanction-row')[0].querySelector('button'));
+  ok($('points-1').textContent === '1', 'second sanction: +1 point to opponent');
+  ok($('cards-0').textContent === '🟨🟥', 'second sanction shows yellow+red');
+
+  click($('sanction-close'));
+  ok($('sanction').classList.contains('hidden'), 'sanction overlay closes');
 
   dom.window.close();
   console.log(fails === 0 ? '\nALL UI DOM TESTS PASSED'

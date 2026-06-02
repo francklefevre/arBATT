@@ -39,12 +39,15 @@
 (function (global) {
   "use strict";
 
-  // Resolve the shared service-block helpers in both browser and Node.
-  var acceleratedBlocks;
+  // Resolve the shared helpers in both browser and Node.
+  var acceleratedBlocks, sanctionForCount;
   if (global.arbattScorer && global.arbattScorer.acceleratedBlocks) {
     acceleratedBlocks = global.arbattScorer.acceleratedBlocks;
+    sanctionForCount = global.arbattScorer.sanctionForCount;
   } else if (typeof require === "function") {
-    acceleratedBlocks = require("./scorer.js").acceleratedBlocks;
+    var scorer = require("./scorer.js");
+    acceleratedBlocks = scorer.acceleratedBlocks;
+    sanctionForCount = scorer.sanctionForCount;
   }
 
   function log(eid, msg) {
@@ -101,6 +104,8 @@
       gameIndex: 0,
       serveOrder: buildServeOrder(firstServer, firstReceiver),
       timeoutsUsed: [false, false], // one time-out per PAIR (team)
+      infractions: [0, 0, 0, 0],    // cumulative misconduct count per player
+      refereeCalled: false,
       accelerated: false,           // acceleration ("expedite") rule active?
       accelGame: null,
       accelTotal: null,
@@ -236,16 +241,42 @@
 
   // --- Public actions --------------------------------------------------------
 
+  /** Internal: add one point to team `t` and check for game/match end. */
+  DoublesScorer.prototype._applyPoint = function (t) {
+    if (this.state.finished) { return; }
+    this.state.points[t] += 1;
+    log(5004, "Point team " + t + " -> " +
+      this.state.points[0] + "-" + this.state.points[1]);
+    this._checkGameEnd();
+  };
+
   /** Award the next point to TEAM `t` (0/1). */
   DoublesScorer.prototype.pointTo = function (t) {
     if (this.state.finished) { log(5003, "Ignored point: finished"); return false; }
     if (t !== 0 && t !== 1) { return false; }
     this._snapshot();
-    this.state.points[t] += 1;
-    log(5004, "Point team " + t + " -> " +
-      this.state.points[0] + "-" + this.state.points[1]);
-    this._checkGameEnd();
+    this._applyPoint(t);
     return true;
+  };
+
+  /**
+   * Sanction player `p` (0..3) for misconduct. Penalty point(s) go to the
+   * OPPOSING pair. Returns the sanction descriptor (see sanctionForCount).
+   */
+  DoublesScorer.prototype.sanction = function (p) {
+    if (this.state.finished) { return null; }
+    if (p < 0 || p > 3) { return null; }
+    this._snapshot();
+    this.state.infractions[p] += 1;
+    var r = sanctionForCount(this.state.infractions[p]);
+    var opponentTeam = 1 - teamOf(p);
+    for (var k = 0; k < r.penalty; k++) { this._applyPoint(opponentTeam); }
+    if (r.refereeCall) { this.state.refereeCalled = true; }
+    log(5013, "Sanction " + this.config.playerNames[p] + " #" +
+      this.state.infractions[p] + " [" + r.cards.join("+") + "] +" +
+      r.penalty + " to team " + opponentTeam +
+      (r.refereeCall ? " (referee call)" : ""));
+    return r;
   };
 
   /**
@@ -320,6 +351,8 @@
       isDeciding: this.isDecidingGame(),
       receivingInverted: this.isReceivingInverted(),
       timeoutsUsed: s.timeoutsUsed.slice(),
+      infractions: s.infractions.slice(),
+      refereeCalled: s.refereeCalled,
       accelerated: s.accelerated,
       wipeDue: this.wipeDue(),
       finished: s.finished,

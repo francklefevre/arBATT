@@ -172,6 +172,12 @@ legend { color: var(--accent); padding: 0 6px; }
 }
 .player-card.serving .serve-dot { opacity: 1; }
 
+/* Accumulated cards on a player/pair card (top-left). */
+.p-cards {
+  position: absolute; top: 8px; left: 10px;
+  font-size: .9rem; line-height: 1.2; text-align: left;
+}
+
 .p-name { font-size: 1rem; color: var(--muted); }
 .p-points {
   font-size: 22vw; line-height: 1; font-weight: 800;
@@ -203,6 +209,19 @@ legend { color: var(--accent); padding: 0 6px; }
 
 .hints { text-align: center; min-height: 1.2rem; display: grid; gap: 2px; }
 .hint { display: inline-block; color: var(--accent); font-size: .9rem; }
+.hint-strong {
+  color: #fff; background: var(--danger); border-radius: 8px;
+  padding: 4px 8px; font-weight: 700;
+}
+
+/* Sanction overlay list */
+.sanction-list { display: grid; gap: 10px; margin: 8px 0; }
+.sanction-row {
+  display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 10px;
+  background: var(--card); border-radius: 12px; padding: 10px 12px;
+}
+.sanction-row .who { text-align: left; }
+.sanction-row .who .cards { font-size: .9rem; color: var(--muted); }
 
 /* Acceleration panel */
 .accel-panel {

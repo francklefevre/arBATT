@@ -4,6 +4,32 @@ Free software developed by Franck LEFEVRE for K1 ( https://k1info.com ),
 with the help of his team of kind and playful robots.
 ============================================================================
 
+2026-06-02 17:45 — v0.1.5 — Cards & sanctions.
+  Engine:
+    - scorer.js: new shared sanctionForCount(n) helper (FFTT ladder p.13),
+      exported and reused by doubles.js. Refactored pointTo() to a snapshot-free
+      _applyPoint() so a whole sanction (card + penalty points) is a single undo.
+    - TTScorer/DoublesScorer gain sanction(player): increments the player's
+      infraction count, awards the penalty point(s) to the OPPONENT side (the
+      opposing pair in doubles), sets refereeCalled on the 4th. view() now
+      exposes infractions[] + refereeCalled. Penalty points can legitimately
+      end a game/match. All state-derived -> undo reverts a sanction exactly.
+    - tests/test_sanctions.js: ladder, singles 1..4, penalty-ends-game, undo,
+      doubles per-player independence + penalty to opposing pair. Pass.
+  UI:
+    - Scoreboard: 🟨 Carton button opens a sanction overlay listing each player
+      with their current cards + a "Sanctionner" button; applying shows the card
+      and penalty and updates the per-card tallies (top-left of each card). A
+      red "recours au juge-arbitre" banner appears on the 4th infraction.
+      Removed the old disabled "Cartons & sanctions (à venir)" menu item.
+      Rules screen documents the ladder.
+    - tests/test_ui_dom.js extended: overlay opens, 2 rows (singles), 1st = 🟨
+      no point, 2nd = 🟨🟥 +1 to opponent. run_all.js runs the 6th suite.
+  Config: version 0.1.5. SW CACHE_VERSION -> arbatt-v0_1_5.
+  Verified: npm test -> 6/6 suites PASS; JS syntax OK; server.err.txt empty.
+  Deploy impact: SW cache bumped; no new runtime asset/service; no deploy/ or
+    Docker assets in repo. kurt.json unchanged.
+
 2026-06-02 17:30 — v0.1.4 — Terminology, scoreboard polish, match-flow screen, git.
   Field feedback from Franck after testing v0.1.2:
     - Renamed "Échauffement" -> "Période d'adaptation" (the manual's official

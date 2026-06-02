@@ -203,6 +203,29 @@
     return v.names[side];
   }
 
+  /** Render the cards earned for a given cumulative infraction count. */
+  function cardsFor(count) {
+    if (count <= 0) { return ""; }
+    if (count === 1) { return "🟨"; }
+    if (count === 2) { return "🟨🟥"; }
+    if (count === 3) { return "🟨🟥🟥"; }
+    return "🟥 (JA)";
+  }
+
+  /** Cards to show on a side's card (player in singles, both players in doubles). */
+  function sideCards(v, side) {
+    if (mode === "doubles") {
+      var parts = [];
+      [2 * side, 2 * side + 1].forEach(function (p) {
+        if (v.infractions[p] > 0) {
+          parts.push(v.names[p] + " " + cardsFor(v.infractions[p]));
+        }
+      });
+      return parts.join(" · ");
+    }
+    return cardsFor(v.infractions[side]);
+  }
+
   function render() {
     if (!match) { return; }
     var v = match.view();
@@ -257,6 +280,11 @@
     var accelBtn = document.getElementById("btn-accel");
     accelBtn.classList.toggle("active", v.accelerated);
     accelBtn.disabled = v.accelerated || v.finished;
+
+    // Cards / sanctions.
+    document.getElementById("cards-0").textContent = sideCards(v, 0);
+    document.getElementById("cards-1").textContent = sideCards(v, 1);
+    document.getElementById("hint-referee").classList.toggle("hidden", !v.refereeCalled);
 
     // Controls availability
     document.getElementById("btn-undo").disabled = !v.canUndo;
@@ -547,6 +575,60 @@
     });
   }
 
+  // ---------------------------------------------------------- cards / sanctions
+  function buildSanctionList(v) {
+    var list = document.getElementById("sanction-list");
+    list.innerHTML = "";
+    var players = (mode === "doubles") ? [0, 1, 2, 3] : [0, 1];
+    players.forEach(function (p) {
+      var row = document.createElement("div");
+      row.className = "sanction-row";
+      var who = document.createElement("div");
+      who.className = "who";
+      who.innerHTML = "<div>" + v.names[p] + "</div><div class='cards'>" +
+        (cardsFor(v.infractions[p]) || "aucun carton") + "</div>";
+      var btn = document.createElement("button");
+      btn.className = "btn-secondary";
+      btn.textContent = "Sanctionner";
+      btn.disabled = v.finished;
+      btn.addEventListener("click", function () { applySanction(p); });
+      row.appendChild(who);
+      row.appendChild(btn);
+      list.appendChild(row);
+    });
+  }
+
+  function applySanction(p) {
+    if (!match) { return; }
+    var r = match.sanction(p);
+    if (!r) { return; }
+    var v = match.view();
+    var cards = r.cards.map(function (c) { return c === "yellow" ? "🟨" : "🟥"; }).join("");
+    var msg = v.names[p] + " : " + cards;
+    if (r.penalty > 0) {
+      msg += " — +" + r.penalty + " point" + (r.penalty > 1 ? "s" : "") +
+        " à l'adversaire";
+    }
+    if (r.refereeCall) { msg += " — RECOURS AU JUGE-ARBITRE"; }
+    document.getElementById("sanction-state").textContent = msg;
+    arbattLog("SCORE", 2050, "Sanction applied: " + msg);
+    buildSanctionList(v); // refresh the displayed card tallies
+    render();
+  }
+
+  function bindSanction() {
+    document.getElementById("btn-carton").addEventListener("click", function () {
+      if (!match) { return; }
+      buildSanctionList(match.view());
+      document.getElementById("sanction-state").textContent = "";
+      document.getElementById("sanction").classList.remove("hidden");
+      arbattLog("UI", 2051, "Open sanction overlay");
+    });
+    document.getElementById("sanction-close").addEventListener("click", function () {
+      document.getElementById("sanction").classList.add("hidden");
+    });
+  }
+
   // ----------------------------------------------------- service worker setup
   function registerServiceWorker() {
     if (!("serviceWorker" in navigator)) { return; }
@@ -575,6 +657,7 @@
     bindScoreboard();
     bindServiceChooser();
     bindAccel();
+    bindSanction();
     bindTimer();
     loadAppConfig();
     registerServiceWorker();

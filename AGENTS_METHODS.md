@@ -76,6 +76,12 @@ Key singles rules distilled from it (page references in the manual):
 - **Timer engine** (`timer.js`): recomputes `remaining()` from an injectable
   time source rather than decrementing a counter — accurate across pause/resume
   and unit-testable with a fake clock.
+- **Cards & sanctions**: shared `sanctionForCount(n)` (scorer.js, exported)
+  encodes the FFTT ladder (1=🟨, 2=🟨🟥 +1, 3=🟨🟥🟥 +2, 4=🟥 referee). Both
+  engines have `sanction(player)` that awards penalty points to the opponent
+  via the snapshot-free `_applyPoint()` so the whole sanction is ONE undo. Per
+  player (4 in doubles); penalty goes to the opposing pair. `view()` exposes
+  `infractions[]` + `refereeCalled`.
 - **Acceleration rule** (`acceleratedBlocks()` in scorer.js, shared with
   doubles): under acceleration the server changes EVERY point. It can start
   mid-game and PERSISTS to the end of the match. Modelled by recording the

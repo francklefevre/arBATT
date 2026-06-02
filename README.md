@@ -51,6 +51,8 @@ en appliquant les règles du *Manuel pratique d'arbitre de club* de la FFTT
   avec anneau de progression, bip et vibration en fin de décompte.
 - ⏩ **Règle d'accélération** : service à chaque point + compteur de 13 renvois
   (le serveur perd le point au 13e renvoi du relanceur).
+- 🟨 **Cartons & sanctions** : échelle jaune → jaune+rouge (+1) → jaune+rouge
+  (+2) → rouge (juge-arbitre), avec points de pénalité attribués à l'adversaire.
 - 🦇 Aux couleurs du club : logo **BATT-Man** (Bayard Argentan Tennis de Table).
 - 📋 **Déroulé de la partie** : les étapes d'une partie dans l'ordre, chacune
   avec un encadré « À ce stade je ne dois pas oublier ».
@@ -91,6 +93,7 @@ arBATT/
 │   ├── test_timer.js           # Chronomètres
 │   ├── test_doubles.js         # Moteur double
 │   ├── test_acceleration.js    # Règle d'accélération
+│   ├── test_sanctions.js       # Cartons & sanctions
 │   └── test_ui_dom.js          # Intégration UI (jsdom)
 └── doc/manuel AC.pdf       # Manuel officiel de référence
 ```
@@ -205,8 +208,24 @@ donc toujours un état exact.
 > la chronométrie des manches sera ajoutée ; en attendant, l'activation est
 > manuelle, ce qui est réglementaire (« à la demande des 2 joueurs »).
 
-*Non encore couvert (voir [Feuille de route](#feuille-de-route))* : les
-cartons/pénalités et la chronométrie des manches.
+### Cartons & sanctions
+
+Depuis le tableau de marque, bouton **🟨 Carton** → choisir le joueur fautif.
+L'échelle (manuel p.13) est appliquée automatiquement :
+
+| Faute | Carton(s) | Pénalité |
+|------:|-----------|----------|
+| 1re   | 🟨 jaune | aucun point |
+| 2e    | 🟨🟥 jaune + rouge | **+1 point** à l'adversaire |
+| 3e    | 🟨🟥 jaune + rouge | **+2 points** à l'adversaire |
+| 4e    | 🟥 rouge | **recours au juge-arbitre** (partie perdue par pénalité) |
+
+Les cartons accumulés sont affichés sur chaque carte. En double, le compte est
+**par joueur** et les points de pénalité vont à la **paire adverse**. L'undo
+annule une sanction (carton **et** point de pénalité).
+
+*Non encore couvert (voir [Feuille de route](#feuille-de-route))* : la
+chronométrie des manches.
 
 ## Paramètres de configuration
 
@@ -278,6 +297,7 @@ node tests/test_scorer.js        # simple
 node tests/test_timer.js         # chronomètres (horloge simulée)
 node tests/test_doubles.js       # double
 node tests/test_acceleration.js  # règle d'accélération
+node tests/test_sanctions.js     # cartons & sanctions
 node tests/test_ui_dom.js        # intégration UI (jsdom)
 ```
 
@@ -298,7 +318,7 @@ des points, mode simple/double, désignation du service, panneau d'accélératio
 - [x] Comptage en **double** (rotation, désignation, inversion à 5 en décisive).
 - [x] **Chronomètres** : période d'adaptation (2 min) et temps mort (1 min).
 - [x] **Règle d'accélération** (service à chaque point, compteur de 13 renvois).
-- [ ] **Cartons & sanctions** (jaune, jaune+rouge, pénalités de points).
+- [x] **Cartons & sanctions** (jaune, jaune+rouge, pénalités de points).
 - [ ] **Chronométrie des manches** (manche 10 min, repos entre manches) +
       déclenchement **automatique** de l'accélération.
 - [ ] **Sauvegarde** des parties dans `dynamic/` et feuille de partie.

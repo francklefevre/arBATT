@@ -90,6 +90,23 @@
     return (firstServer + serviceBlocks(p0, p1, pointsPerGame)) % 2;
   }
 
+  /**
+   * Pure helper: the sanction for the n-th infraction of a player (FFTT manual
+   * p.13). Returns the card(s) to show, the penalty points awarded to the
+   * OPPONENT, and whether the referee (juge-arbitre) must be called.
+   *
+   *   1st  -> yellow                       (warning, no point)
+   *   2nd  -> yellow + red, +1 to opponent
+   *   3rd  -> yellow + red, +2 to opponent
+   *   4th+ -> red, referee called (match lost by penalty)
+   */
+  function sanctionForCount(n) {
+    if (n <= 1) { return { cards: ["yellow"], penalty: 0, refereeCall: false }; }
+    if (n === 2) { return { cards: ["yellow", "red"], penalty: 1, refereeCall: false }; }
+    if (n === 3) { return { cards: ["yellow", "red"], penalty: 2, refereeCall: false }; }
+    return { cards: ["red"], penalty: 0, refereeCall: true };
+  }
+
   function deepCopy(obj) {
     return JSON.parse(JSON.stringify(obj));
   }
@@ -132,6 +149,8 @@
       gameIndex: 0,            // 0-based index of the current game
       firstServerOfGame: this.config.firstServer,
       timeoutsUsed: [false, false],
+      infractions: [0, 0],     // cumulative misconduct count per player
+      refereeCalled: false,    // a 4th infraction occurred (match lost by JA)
       accelerated: false,      // acceleration ("expedite") rule active?
       accelGame: null,         // gameIndex when it was activated
       accelTotal: null,        // in-game total points when it was activated
@@ -236,6 +255,15 @@
 
   // --- Public actions --------------------------------------------------------
 
+  /** Internal: add one point to side `i` and check for game/match end. */
+  TTScorer.prototype._applyPoint = function (i) {
+    if (this.state.finished) { return; }
+    this.state.points[i] += 1;
+    log(3004, "Point " + this.config.playerNames[i] + " -> " +
+      this.state.points[0] + "-" + this.state.points[1]);
+    this._checkGameEnd();
+  };
+
   /** Award the next point to player `i` (0/1). */
   TTScorer.prototype.pointTo = function (i) {
     if (this.state.finished) {
@@ -244,17 +272,27 @@
     }
     if (i !== 0 && i !== 1) { return false; }
     this._snapshot();
-    this.state.points[i] += 1;
-    log(3004, "Point " + this.config.playerNames[i] + " -> " +
-      this.state.points[0] + "-" + this.state.points[1]);
-    this._checkGameEnd();
+    this._applyPoint(i);
     return true;
   };
 
-  /** Apply a penalty point to the OPPONENT of player `i` (card sanction). */
-  TTScorer.prototype.penaltyAgainst = function (i) {
-    // The opponent of the penalised player receives the point(s).
-    return this.pointTo(1 - i);
+  /**
+   * Sanction player `i` for misconduct. Increments their infraction count,
+   * shows the corresponding card(s) and awards any penalty point(s) to the
+   * opponent. Returns the sanction descriptor (see sanctionForCount).
+   */
+  TTScorer.prototype.sanction = function (i) {
+    if (this.state.finished) { return null; }
+    if (i !== 0 && i !== 1) { return null; }
+    this._snapshot();
+    this.state.infractions[i] += 1;
+    var r = sanctionForCount(this.state.infractions[i]);
+    for (var k = 0; k < r.penalty; k++) { this._applyPoint(1 - i); }
+    if (r.refereeCall) { this.state.refereeCalled = true; }
+    log(3011, "Sanction " + this.config.playerNames[i] + " #" +
+      this.state.infractions[i] + " [" + r.cards.join("+") + "] +" +
+      r.penalty + " to opponent" + (r.refereeCall ? " (referee call)" : ""));
+    return r;
   };
 
   /** Record a time-out for player `i`. Returns false if already used. */
@@ -317,6 +355,8 @@
       isDeciding: this.isDecidingGame(),
       wipeDue: this.wipeDue(),
       timeoutsUsed: s.timeoutsUsed.slice(),
+      infractions: s.infractions.slice(),
+      refereeCalled: s.refereeCalled,
       accelerated: s.accelerated,
       finished: s.finished,
       winner: s.winner,
@@ -331,7 +371,8 @@
     TTScorer: TTScorer,
     serverOf: serverOf,
     serviceBlocks: serviceBlocks,
-    acceleratedBlocks: acceleratedBlocks
+    acceleratedBlocks: acceleratedBlocks,
+    sanctionForCount: sanctionForCount
   };
   global.arbattScorer = api;
   if (typeof module !== "undefined" && module.exports) {

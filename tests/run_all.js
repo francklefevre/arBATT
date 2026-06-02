@@ -21,6 +21,7 @@ const SUITES = [
   'test_timer.js',
   'test_doubles.js',
   'test_acceleration.js',
+  'test_sanctions.js',
   'test_ui_dom.js'
 ];
 
