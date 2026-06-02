@@ -4,6 +4,20 @@ Free software developed by Franck LEFEVRE for K1 ( https://k1info.com ),
 with the help of his team of kind and playful robots.
 ============================================================================
 
+2026-06-02 19:00 — v0.1.10 — "Mieux connaître BATT" club presentation page.
+  - New menu item "🦇 Mieux connaître BATT" -> #screen-club: club presentation
+    built from facts on https://batt.club/ (full name Bayard Argentan Tennis de
+    Table, 33 rue du Paty 61200 Argentan, 25+ years, sections initiation/baby-
+    ping, loisir, compétition, équipe Pro, Section Handisport, Centre de
+    Préparation aux Jeux; 30-table hall, club-house, prep room, video; contact
+    email/phone/hours), with a light, friendly tone and tappable links
+    (maps / mailto / tel / batt.club). The live PWA URL is https://batt.club/arbatt/.
+  - Styles: .club-cool humour box, .club-grid sections, .club-contact links.
+  - tests/test_ui_dom.js: club page opens from the menu, mentions the club name,
+    links to batt.club, returns to the menu. npm test -> 7/7 PASS.
+  Config: version 0.1.10; SW -> arbatt-v0_1_10. No new asset (reuses the logo).
+  Deploy impact: none beyond the SW cache bump; no deploy files changed.
+
 2026-06-02 18:45 — v0.1.9 — Remove a card + git-based SSH update + dotfile guard.
   Card removal (umpire mistake correction):
     - scorer.js / doubles.js: new removeSanction(player) — decrements the

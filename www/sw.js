@@ -20,7 +20,7 @@
  * ---------------------------------------------------------------------------
  */
 
-var CACHE_VERSION = "arbatt-v0_1_9";
+var CACHE_VERSION = "arbatt-v0_1_10";
 
 var APP_SHELL = [
   "./",

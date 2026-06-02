@@ -316,6 +316,31 @@ legend { color: var(--accent); padding: 0 6px; }
   .p-points { font-size: 8rem; }
 }
 
+/* ---- Mieux connaître BATT (club page) ---- */
+.club-cool {
+  border-left: 4px solid var(--accent);
+  background: rgba(244, 183, 64, .12);
+  border-radius: 10px; padding: 12px 14px; margin: 6px 0 4px;
+  line-height: 1.5;
+}
+.club-grid { list-style: none; padding: 0; margin: 8px 0;
+  display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.club-grid li {
+  background: var(--card); border-radius: 12px; padding: 12px;
+  display: flex; flex-direction: column; gap: 4px;
+}
+.club-grid li span { color: var(--muted); font-size: .85rem; line-height: 1.35; }
+.club-contact { list-style: none; padding: 0; line-height: 2; }
+.club-contact a { color: var(--accent); text-decoration: none; }
+.club-contact a:active { text-decoration: underline; }
+.club-link { display: block; text-align: center; text-decoration: none;
+  margin-top: 14px; }
+.club-foot { text-align: center; color: var(--muted); margin-top: 16px; }
+
+@media (max-width: 380px) {
+  .club-grid { grid-template-columns: 1fr; }
+}
+
 /* ---- Countdown timer overlay ---- */
 .overlay {
   position: fixed; inset: 0;

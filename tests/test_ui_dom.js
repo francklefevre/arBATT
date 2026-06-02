@@ -73,6 +73,16 @@ async function run() {
   click($('screen-flow').querySelector("[data-target='screen-menu']"));
   ok(visible('screen-menu'), 'back to menu from the flow screen');
 
+  // --- "Mieux connaître BATT" club page -----------------------------------
+  click($('screen-menu').querySelector("[data-target='screen-club']"));
+  ok(visible('screen-club'), 'club page shown from the menu');
+  ok($('screen-club').textContent.indexOf('Bayard Argentan') >= 0,
+    'club page mentions the club name');
+  ok(!!$('screen-club').querySelector("a[href='https://batt.club/']"),
+    'club page links to batt.club');
+  click($('screen-club').querySelector("[data-target='screen-menu']"));
+  ok(visible('screen-menu'), 'back to menu from the club page');
+
   // ============================ SINGLES ===================================
   click($('screen-menu').querySelector("[data-target='screen-newmatch']"));
   ok(visible('screen-newmatch'), 'setup screen shown');

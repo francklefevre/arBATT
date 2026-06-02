@@ -63,6 +63,8 @@ en appliquant les règles du *Manuel pratique d'arbitre de club* de la FFTT
 - 📋 **Déroulé de la partie** : les étapes d'une partie dans l'ordre, chacune
   avec un encadré « À ce stade je ne dois pas oublier ».
 - 📖 **Aide-mémoire** des règles clés directement dans l'app.
+- 🦇 **Mieux connaître BATT** : page de présentation du club (sections, salle,
+  contact, liens) avec un brin d'humour.
 - 🔒 **Serveur web minimal en Python** servant un **unique répertoire**
   (`www/`) de façon **hermétique** (aucun accès hors de ce répertoire).
 - ⚙️ Tout est **paramétrable** (port, en-tête `Server`, web-root, logs…), via
@@ -200,8 +202,8 @@ cd ~/arbatt-src && git pull
 5. À la fin, l'écran récapitule le score et le détail des manches.
 
 Le menu propose aussi la **Période d'adaptation** (chrono 2 min), le **Déroulé
-de la partie** (étapes + rappels « À ce stade je ne dois pas oublier ») et un
-**Aide-mémoire** des règles.
+de la partie** (étapes + rappels « À ce stade je ne dois pas oublier »), un
+**Aide-mémoire** des règles, et **Mieux connaître BATT** (présentation du club).
 
 ## Règles de comptage implémentées
 
