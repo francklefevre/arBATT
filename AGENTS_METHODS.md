@@ -108,6 +108,16 @@ Key singles rules distilled from it (page references in the manual):
 - No GIT commands. Prefer patches. Update README, history file, `output.txt`,
   `kurt.json` as work proceeds.
 
+## Game chronometry / auto-acceleration
+
+The scoreboard game clock reuses `CountdownTimer(gameMinutes*60s)` and shows the
+ELAPSED time (limit − remaining). When `isFinished()` and the pure
+`shouldAutoAccelerate(true, totalPts, threshold, accelerated)` returns true, the
+app calls `match.activateAcceleration()` — no new engine code. The clock resets
+per game (tracked by `gameClockGameIndex`), pauses while a modal timer overlay
+is open and when leaving the scoreboard. To test the trigger headlessly, load
+the app with `{ gameMinutes: 0 }` so the clock is finished immediately.
+
 ## Testing the UI headlessly (jsdom)
 
 `tests/test_ui_dom.js` loads the real `www/index.html` in jsdom and drives it.

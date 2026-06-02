@@ -146,6 +146,13 @@
         <span id="ctx-deciding" class="badge hidden">Manche décisive</span>
       </div>
 
+      <!-- Game clock (counts up; triggers acceleration at the time limit). -->
+      <div class="gameclock" id="gameclock">
+        <button class="gc-btn" id="gc-toggle" title="Pause / reprise">⏸</button>
+        <span class="gc-time" id="gc-time">00:00</span>
+        <span class="gc-limit" id="gc-limit">/ 10:00</span>
+      </div>
+
       <!-- The two big tappable score cards -->
       <div class="scoreboard">
         <button class="player-card" id="card-0" data-player="0">

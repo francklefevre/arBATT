@@ -117,6 +117,23 @@
     return p > 1 ? 1 : p;
   };
 
+  /**
+   * Pure decision: must the acceleration rule kick in automatically?
+   * (FFTT manual p.16) — yes when the game clock has reached its limit, the
+   * players have scored fewer than `pointsThreshold` points in the current
+   * game, and the rule is not already active.
+   *
+   * @param {boolean} clockReached     the game clock hit its limit (e.g. 10 min)
+   * @param {number}  totalPoints      points scored so far in the current game
+   * @param {number}  pointsThreshold  threshold (e.g. 18)
+   * @param {boolean} alreadyAccelerated
+   * @returns {boolean}
+   */
+  function shouldAutoAccelerate(clockReached, totalPoints, pointsThreshold,
+                                alreadyAccelerated) {
+    return !!clockReached && !alreadyAccelerated && totalPoints < pointsThreshold;
+  }
+
   /** Format mm:ss from a number of seconds. */
   function formatMMSS(totalSeconds) {
     totalSeconds = Math.max(0, Math.floor(totalSeconds));
@@ -125,7 +142,11 @@
     return (m < 10 ? "0" + m : m) + ":" + (s < 10 ? "0" + s : s);
   }
 
-  var api = { CountdownTimer: CountdownTimer, formatMMSS: formatMMSS };
+  var api = {
+    CountdownTimer: CountdownTimer,
+    formatMMSS: formatMMSS,
+    shouldAutoAccelerate: shouldAutoAccelerate
+  };
   global.arbattTimer = api;
   if (typeof module !== "undefined" && module.exports) {
     module.exports = api;

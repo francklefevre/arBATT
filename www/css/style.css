@@ -143,6 +143,21 @@ legend { color: var(--accent); padding: 0 6px; }
   padding: 2px 10px; font-size: .8rem; font-weight: 700;
 }
 
+/* Game clock */
+.gameclock {
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  margin-bottom: 8px; color: var(--text);
+}
+.gameclock .gc-time {
+  font-size: 1.2rem; font-weight: 700; font-variant-numeric: tabular-nums;
+}
+.gameclock.warn .gc-time { color: var(--danger); }
+.gameclock .gc-limit { color: var(--muted); font-size: .85rem; }
+.gc-btn {
+  border: none; background: var(--card-b); color: var(--text);
+  border-radius: 8px; padding: 4px 10px; font-size: 1rem; cursor: pointer;
+}
+
 .scoreboard {
   flex: 1;
   display: grid;

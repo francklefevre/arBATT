@@ -4,6 +4,34 @@ Free software developed by Franck LEFEVRE for K1 ( https://k1info.com ),
 with the help of his team of kind and playful robots.
 ============================================================================
 
+2026-06-02 18:00 — v0.1.6 — Game chronometry + automatic acceleration trigger.
+  Engine/helper:
+    - timer.js: new pure shouldAutoAccelerate(clockReached, totalPoints,
+      threshold, alreadyAccelerated) (exported, unit-tested).
+  UI:
+    - Scoreboard game clock: a count-up clock (reusing CountdownTimer for the
+      limit) with a pause/resume button; shows mm:ss / limit, turns red in the
+      last minute. Reset at each new game; paused while a time-out / adaptation
+      overlay is open and while off the scoreboard screen.
+    - When the clock reaches ARBATT_GAME_MINUTES (10) with fewer than
+      ARBATT_ACCEL_POINTS_THRESHOLD (18) points, acceleration auto-activates
+      (beep + vibration), reusing the existing acceleration machinery.
+  Tests:
+    - tests/dom_harness.js: factored shared jsdom loader; its default
+      app-config is read from config/param.json so the version assertion no
+      longer needs editing on a bump. test_ui_dom.js now uses it.
+    - tests/test_chrono.js: shouldAutoAccelerate unit tests + a jsdom scenario
+      with gameMinutes=0 proving auto-acceleration fires, and a default
+      scenario proving it does NOT before the limit (+ clock display & pause).
+    - npm test -> 7/7 suites PASS.
+  Config:
+    - param.json(.example): version 0.1.6; new ARBATT_GAME_MINUTES (10) and
+      ARBATT_ACCEL_POINTS_THRESHOLD (18). server.py publishes gameMinutes +
+      accelPointsThreshold in www/app-config.json. SW -> arbatt-v0_1_6.
+  Verified: app-config.json serves the new keys; server.err.txt empty.
+  Deploy impact: SW cache bumped; no new service; no deploy/ or Docker assets.
+    kurt.json unchanged.
+
 2026-06-02 17:45 — v0.1.5 — Cards & sanctions.
   Engine:
     - scorer.js: new shared sanctionForCount(n) helper (FFTT ladder p.13),

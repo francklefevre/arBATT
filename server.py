@@ -179,6 +179,8 @@ def main():
         "warmupSeconds": int(config.get("ARBATT_WARMUP_SECONDS", 120)),
         "timeoutSeconds": int(config.get("ARBATT_TIMEOUT_SECONDS", 60)),
         "accelReturns": int(config.get("ARBATT_ACCEL_RETURNS", 13)),
+        "gameMinutes": int(config.get("ARBATT_GAME_MINUTES", 10)),
+        "accelPointsThreshold": int(config.get("ARBATT_ACCEL_POINTS_THRESHOLD", 18)),
     }
     config_path = os.path.join(webroot, "app-config.json")
     try:

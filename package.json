@@ -1,6 +1,6 @@
 {
   "name": "arbatt",
-  "version": "0.1.5",
+  "version": "0.1.6",
   "private": true,
   "description": "arBATT - Table tennis club referee companion (PWA). Free software developed by Franck LEFEVRE for K1 ( https://k1info.com ), with the help of his team of kind and playful robots.",
   "scripts": {

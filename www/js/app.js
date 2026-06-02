@@ -25,6 +25,7 @@
   var teamOf = window.arbattDoubles.teamOf;
   var CountdownTimer = window.arbattTimer.CountdownTimer;
   var formatMMSS = window.arbattTimer.formatMMSS;
+  var shouldAutoAccelerate = window.arbattTimer.shouldAutoAccelerate;
 
   var match = null;          // current scoring engine (TTScorer | DoublesScorer)
   var mode = "singles";      // "singles" | "doubles"
@@ -33,7 +34,9 @@
     version: "?",
     warmupSeconds: 120,
     timeoutSeconds: 60,
-    accelReturns: 13
+    accelReturns: 13,
+    gameMinutes: 10,
+    accelPointsThreshold: 18
   };
 
   // Receiver's good-return counter, only meaningful under the acceleration rule.
@@ -43,11 +46,22 @@
   var timer = null;
   var timerTick = null;
 
+  // Per-game clock (counts up to the time limit, then triggers acceleration).
+  var gameClock = null;
+  var gameClockTick = null;
+  var gameClockGameIndex = -1;    // game the current clock belongs to
+  var gameClockResumeAfterModal = false;
+
   // -------------------------------------------------------------- navigation
   function show(screenId) {
     var screens = document.querySelectorAll(".screen");
     for (var i = 0; i < screens.length; i++) {
       screens[i].classList.toggle("hidden", screens[i].id !== screenId);
+    }
+    // Leaving the scoreboard: stop the game clock from ticking in the background.
+    if (screenId !== "screen-score") {
+      stopGameClockTick();
+      if (gameClock && gameClock.isRunning()) { gameClock.pause(); }
     }
     arbattLog("UI", 2001, "Show screen " + screenId);
   }
@@ -75,6 +89,12 @@
           }
           if (typeof data.accelReturns === "number") {
             appConfig.accelReturns = data.accelReturns;
+          }
+          if (typeof data.gameMinutes === "number") {
+            appConfig.gameMinutes = data.gameMinutes;
+          }
+          if (typeof data.accelPointsThreshold === "number") {
+            appConfig.accelPointsThreshold = data.accelPointsThreshold;
           }
         }
         document.getElementById("version").textContent = "v" + appConfig.version;
@@ -177,6 +197,7 @@
     }
     lastGameIndex = 0;
     returnCount = 0;
+    gameClockGameIndex = -1; // force a fresh game clock at the first render
     arbattLog("UI", 2003, "Match started (" + mode + ")");
     configureScoreboardForMode();
     render();
@@ -303,6 +324,13 @@
     }
     lastGameIndex = v.gameIndex;
 
+    // Game clock: (re)start a fresh clock when entering a new game.
+    if (!v.finished && v.gameIndex !== gameClockGameIndex) {
+      gameClockGameIndex = v.gameIndex;
+      startGameClock();
+    }
+    if (v.finished) { stopGameClockTick(); }
+
     if (v.finished) { showResult(v); }
   }
 
@@ -398,6 +426,12 @@
     e.state.textContent = "Prêt";
     e.startpause.textContent = "Démarrer";
     e.overlay.classList.remove("hidden");
+    // Pause the game clock while a time-out / adaptation overlay is open.
+    if (gameClock && gameClock.isRunning()) {
+      gameClock.pause();
+      stopGameClockTick();
+      gameClockResumeAfterModal = true;
+    }
     timerRefresh();
     // Auto-start: the referee usually wants the clock running immediately.
     timer.start();
@@ -410,6 +444,13 @@
     stopTick();
     timer = null;
     timerEls().overlay.classList.add("hidden");
+    // Resume the game clock if it was running before the overlay opened.
+    if (gameClockResumeAfterModal && gameClock && match && !match.view().finished) {
+      gameClock.start();
+      gameClockTick = setInterval(refreshGameClock, 250);
+      document.getElementById("gc-toggle").textContent = "⏸";
+    }
+    gameClockResumeAfterModal = false;
     arbattLog("UI", 2012, "Close timer");
   }
 
@@ -436,6 +477,72 @@
     });
     document.getElementById("setup-warmup").addEventListener("click", function () {
       openTimer("Période d’adaptation", appConfig.warmupSeconds);
+    });
+  }
+
+  // --------------------------------------------------------------- game clock
+  // Counts up to the game time limit; when reached with fewer than the
+  // points threshold scored, the acceleration rule is auto-activated.
+  function stopGameClockTick() {
+    if (gameClockTick) { clearInterval(gameClockTick); gameClockTick = null; }
+  }
+
+  function startGameClock() {
+    stopGameClockTick();
+    var limitSec = appConfig.gameMinutes * 60;
+    gameClock = new CountdownTimer(limitSec * 1000, { label: "manche" });
+    document.getElementById("gc-limit").textContent = "/ " + formatMMSS(limitSec);
+    document.getElementById("gc-toggle").textContent = "⏸";
+    gameClock.start();
+    gameClockTick = setInterval(refreshGameClock, 250);
+    refreshGameClock();
+    arbattLog("TIMER", 2061, "Game clock started (" + appConfig.gameMinutes + " min)");
+  }
+
+  function refreshGameClock() {
+    if (!gameClock || !match) { return; }
+    var limitSec = appConfig.gameMinutes * 60;
+    var elapsed = limitSec - gameClock.remainingSeconds();
+    if (elapsed < 0) { elapsed = 0; }
+    document.getElementById("gc-time").textContent = formatMMSS(elapsed);
+    document.getElementById("gameclock").classList.toggle(
+      "warn", gameClock.remainingSeconds() <= 60);
+    checkGameClock();
+  }
+
+  function checkGameClock() {
+    if (!match) { return; }
+    var v = match.view();
+    if (v.finished) { stopGameClockTick(); return; }
+    if (gameClock && gameClock.isFinished()) {
+      var total = v.points[0] + v.points[1];
+      if (shouldAutoAccelerate(true, total, appConfig.accelPointsThreshold,
+                               v.accelerated)) {
+        match.activateAcceleration();
+        returnCount = 0;
+        arbattLog("SCORE", 2060, "Auto-acceleration: " + appConfig.gameMinutes +
+          " min reached with " + total + " < " + appConfig.accelPointsThreshold +
+          " points");
+        if (navigator.vibrate) { navigator.vibrate([150, 80, 150]); }
+        beep();
+        render();
+      }
+    }
+  }
+
+  function bindGameClock() {
+    document.getElementById("gc-toggle").addEventListener("click", function () {
+      if (!gameClock) { return; }
+      if (gameClock.isRunning()) {
+        gameClock.pause();
+        stopGameClockTick();
+        document.getElementById("gc-toggle").textContent = "▶";
+      } else {
+        gameClock.start();
+        gameClockTick = setInterval(refreshGameClock, 250);
+        document.getElementById("gc-toggle").textContent = "⏸";
+      }
+      refreshGameClock();
     });
   }
 
@@ -658,6 +765,7 @@
     bindServiceChooser();
     bindAccel();
     bindSanction();
+    bindGameClock();
     bindTimer();
     loadAppConfig();
     registerServiceWorker();

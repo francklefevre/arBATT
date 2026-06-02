@@ -53,6 +53,9 @@ en appliquant les règles du *Manuel pratique d'arbitre de club* de la FFTT
   (le serveur perd le point au 13e renvoi du relanceur).
 - 🟨 **Cartons & sanctions** : échelle jaune → jaune+rouge (+1) → jaune+rouge
   (+2) → rouge (juge-arbitre), avec points de pénalité attribués à l'adversaire.
+- ⏲️ **Chronométrie des manches** : horloge de manche (10 min) sur le tableau de
+  marque, qui **déclenche automatiquement** l'accélération à la limite si moins
+  de 18 points ont été marqués.
 - 🦇 Aux couleurs du club : logo **BATT-Man** (Bayard Argentan Tennis de Table).
 - 📋 **Déroulé de la partie** : les étapes d'une partie dans l'ordre, chacune
   avec un encadré « À ce stade je ne dois pas oublier ».
@@ -94,6 +97,8 @@ arBATT/
 │   ├── test_doubles.js         # Moteur double
 │   ├── test_acceleration.js    # Règle d'accélération
 │   ├── test_sanctions.js       # Cartons & sanctions
+│   ├── test_chrono.js          # Chronométrie + accélération auto
+│   ├── dom_harness.js          # Harnais jsdom partagé
 │   └── test_ui_dom.js          # Intégration UI (jsdom)
 └── doc/manuel AC.pdf       # Manuel officiel de référence
 ```
@@ -208,6 +213,15 @@ donc toujours un état exact.
 > la chronométrie des manches sera ajoutée ; en attendant, l'activation est
 > manuelle, ce qui est réglementaire (« à la demande des 2 joueurs »).
 
+### Chronométrie & accélération automatique
+
+Le tableau de marque affiche une **horloge de manche** (comptage croissant) avec
+un bouton pause/reprise. Quand elle atteint **`ARBATT_GAME_MINUTES`** (10 min) et
+que moins de **`ARBATT_ACCEL_POINTS_THRESHOLD`** (18) points ont été marqués dans
+la manche, la **règle d'accélération s'active automatiquement** (bip + vibration).
+L'horloge se réinitialise à chaque manche et se met en pause pendant les
+chronos de temps mort / période d'adaptation.
+
 ### Cartons & sanctions
 
 Depuis le tableau de marque, bouton **🟨 Carton** → choisir le joueur fautif.
@@ -245,6 +259,8 @@ priorité est : `param.json` → `secret.json` → variable d'environnement.
 | `ARBATT_WARMUP_SECONDS`  | int     | `120`         | Durée du chrono de période d'adaptation (s). |
 | `ARBATT_TIMEOUT_SECONDS` | int     | `60`          | Durée du chrono de temps mort (s). |
 | `ARBATT_ACCEL_RETURNS`   | int     | `13`          | Nombre de renvois du relanceur donnant le point (règle d'accélération). |
+| `ARBATT_GAME_MINUTES`    | int     | `10`          | Durée de manche (min) avant déclenchement de l'accélération. |
+| `ARBATT_ACCEL_POINTS_THRESHOLD` | int | `18`       | Seuil de points sous lequel l'accélération se déclenche à la limite de temps. |
 | `ARBATT_LOG_DIR`         | string  | `logs`        | Répertoire de tous les fichiers de logs. |
 | `ARBATT_LOG_TO_CONSOLE`  | bool    | `true`        | Écho des logs activés sur la console. |
 | `ARBATT_LOG_TO_FILE`     | bool    | `true`        | Écriture des logs dans `logs/server.log`. |
@@ -259,7 +275,8 @@ priorité est : `param.json` → `secret.json` → variable d'environnement.
 - **`config/*.json`** — objets JSON. Les clés commençant par `_` sont purement
   documentaires (notice de licence, description) et sont ignorées au chargement.
 - **`www/app-config.json`** — `{"version", "warmupSeconds", "timeoutSeconds",
-  "accelReturns"}`, **généré** au démarrage depuis `param.json` (lu par la PWA).
+  "accelReturns", "gameMinutes", "accelPointsThreshold"}`, **généré** au
+  démarrage depuis `param.json` (lu par la PWA).
 - **`logs/server.log`** — une ligne par événement :
   `STAMP [TAG] #NNNN message` (voir ci-dessous).
 - **`logs/server.err.txt`** — mêmes lignes mais limitées aux `ERROR`/`WARN` ;
@@ -298,6 +315,7 @@ node tests/test_timer.js         # chronomètres (horloge simulée)
 node tests/test_doubles.js       # double
 node tests/test_acceleration.js  # règle d'accélération
 node tests/test_sanctions.js     # cartons & sanctions
+node tests/test_chrono.js        # chronométrie + accélération auto
 node tests/test_ui_dom.js        # intégration UI (jsdom)
 ```
 
@@ -319,8 +337,9 @@ des points, mode simple/double, désignation du service, panneau d'accélératio
 - [x] **Chronomètres** : période d'adaptation (2 min) et temps mort (1 min).
 - [x] **Règle d'accélération** (service à chaque point, compteur de 13 renvois).
 - [x] **Cartons & sanctions** (jaune, jaune+rouge, pénalités de points).
-- [ ] **Chronométrie des manches** (manche 10 min, repos entre manches) +
-      déclenchement **automatique** de l'accélération.
+- [x] **Chronométrie des manches** (10 min) + déclenchement **automatique** de
+      l'accélération.
+- [ ] **Repos entre manches** (1 min) automatisé et chronométrage fin (pauses).
 - [ ] **Sauvegarde** des parties dans `dynamic/` et feuille de partie.
 - [ ] Génération du **QR code** de mise à disposition.
 

@@ -26,11 +26,7 @@
  * Run with:  node tests/test_ui_dom.js   (or: npm run test:ui)
  */
 
-const fs = require('fs');
-const path = require('path');
-const { JSDOM } = require('jsdom');
-
-const WWW = path.join(__dirname, '..', 'www');
+const { loadApp, version } = require('./dom_harness');
 
 let fails = 0;
 function ok(cond, msg) {
@@ -39,40 +35,6 @@ function ok(cond, msg) {
 }
 
 const tick = function () { return new Promise(function (r) { setTimeout(r, 0); }); };
-
-function loadApp() {
-  // Strip the page's own <script src> tags; we evaluate the files ourselves.
-  let html = fs.readFileSync(path.join(WWW, 'index.html'), 'utf8')
-    .replace(/<script src="[^"]+"><\/script>/g, '');
-
-  const dom = new JSDOM(html, {
-    runScripts: 'outside-only',
-    pretendToBeVisual: true
-  });
-  const win = dom.window;
-
-  // Stub fetch so loadAppConfig() resolves deterministically offline.
-  win.fetch = function () {
-    return Promise.resolve({
-      ok: true,
-      json: function () {
-        return Promise.resolve({
-          version: '0.1.5', warmupSeconds: 120, timeoutSeconds: 60
-        });
-      }
-    });
-  };
-
-  ['js/log.js', 'js/timer.js', 'js/scorer.js', 'js/doubles.js', 'js/app.js']
-    .forEach(function (rel) {
-      win.eval(fs.readFileSync(path.join(WWW, rel), 'utf8'));
-    });
-
-  // Do NOT dispatch DOMContentLoaded: jsdom fires it asynchronously by itself,
-  // and our bootstrap listener (registered just above) will catch that single
-  // firing once the caller yields to the event loop.
-  return dom;
-}
 
 async function run() {
   const dom = loadApp();
@@ -96,7 +58,7 @@ async function run() {
 
   // --- boot ---------------------------------------------------------------
   ok(visible('screen-menu'), 'menu screen visible at boot');
-  ok($('version').textContent === 'v0.1.5', 'version banner from app-config');
+  ok($('version').textContent === 'v' + version, 'version banner from app-config');
   ok($('firstServer').options.length === 2, 'singles toss has 2 server options');
 
   // --- "période d'adaptation" rename + "déroulé de la partie" screen -------
