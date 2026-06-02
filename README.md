@@ -7,16 +7,30 @@
   and people, always making sure it harms nothing and no one.
 -->
 
+<p align="center">
+  <img src="www/icons/icon-512.png" width="150" alt="arBATT — BATT-Man" /><br/>
+  <strong>L'arbitre de club de tennis de table, dans ta poche.</strong><br/>
+  <em>PWA · 100 % hors-ligne · installable en scannant un QR code · zéro pub, zéro pisteur</em>
+</p>
+
 # arBATT — l'assistant de l'arbitre de club de tennis de table
+
+> **Tu arbitres une partie au club ?** arBATT compte les points à ta place —
+> **en simple comme en double** — et gère pour toi le **service**, les **camps**,
+> l'**égalité**, les **temps morts**, les **cartons**, le **chrono de manche** et
+> la **règle d'accélération**. Il te souffle même, à chaque étape, *ce que tu ne
+> dois pas oublier*. Tu n'as plus qu'à suivre le jeu et taper sur la bonne carte. 🏓
 
 **arBATT** est une **PWA** (Progressive Web App) qui accompagne un·e arbitre de
 club de tennis de table pendant ses parties. Elle est pensée pour être ouverte
 instantanément en scannant un simple **QR code**, puis utilisée d'une seule main
 à la table de marque, y compris **hors-ligne** une fois installée.
 
-L'application démarre sur un **menu** proposant plusieurs activités. La première
-et la plus aboutie est le **comptage des points**, sujet riche que arBATT gère
-en appliquant les règles du *Manuel pratique d'arbitre de club* de la FFTT
+Développé par et pour le **BATT — Bayard Argentan Tennis de Table**
+( [batt.club](https://batt.club/) ), et **offert à tous les clubs** : c'est un
+logiciel **libre**, fais-en bon usage ! L'appli démarre sur un **menu**
+proposant plusieurs activités, la principale étant le **comptage des points**,
+qui applique les règles du *Manuel pratique d'arbitre de club* de la FFTT
 (édition 2025/2026, fourni dans `doc/`).
 
 > En toutes circonstances… **RESTEZ SPORT !**
@@ -393,6 +407,19 @@ des points, mode simple/double, désignation du service, panneau d'accélératio
 - [x] **Repos entre manches** (1 min) automatisé + **résumé des manches** jouées.
 - [ ] **Sauvegarde** des parties dans `dynamic/` et feuille de partie.
 - [ ] Génération du **QR code** de mise à disposition.
+
+## Le club — BATT 🦇
+
+<p align="center">
+  <img src="www/media/salle.jpg" width="640"
+       alt="La salle du BATT à Argentan : tables, filet, marqueurs et l'équipe" />
+</p>
+
+**Bayard Argentan Tennis de Table** — 33 rue du Paty, 61200 Argentan. Plus de
+**25 ans** de ping pour *tout le monde* : du **baby-ping** à l'**équipe Pro**,
+des **valides** et des **para** qui visent les **Jeux**, du **loisir** à la
+**compétition** à tous les niveaux. Bref, on est un peu cool. 😎
+→ [batt.club](https://batt.club/) · l'appli en ligne : <https://batt.club/arbatt/>
 
 ## Licence
 

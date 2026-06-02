@@ -4,6 +4,22 @@ Free software developed by Franck LEFEVRE for K1 ( https://k1info.com ),
 with the help of his team of kind and playful robots.
 ============================================================================
 
+2026-06-02 19:15 — v0.1.11 — Club hall photo + README "pub".
+  - Added a real photo of the club hall to the "Mieux connaître BATT" page.
+    Sourced from https://batt.club/ (team photo in the hall, with markers and
+    the Argentan banner), downloaded, resized to 900px and recompressed to
+    ~107 KB, committed locally as www/media/salle.jpg (works offline; added to
+    the service worker pre-cache) rather than hot-linked. New .club-photo style.
+  - Added the club's Facebook & Instagram links to the contact list.
+  - README: a promotional header (centered logo + tagline + one-line "what it
+    is"), a punchy intro blurb for GitHub visitors, and a "Le club — BATT"
+    section featuring the hall photo and the live URL https://batt.club/arbatt/.
+  Tests: npm test -> 7/7 PASS (the jsdom club-page test is unaffected; the
+    image simply doesn't load headlessly).
+  Config: version 0.1.11; SW -> arbatt-v0_1_11 (new media asset).
+  Deploy impact: new static asset www/media/salle.jpg shipped + pre-cached;
+    no server/deploy script changes.
+
 2026-06-02 19:00 — v0.1.10 — "Mieux connaître BATT" club presentation page.
   - New menu item "🦇 Mieux connaître BATT" -> #screen-club: club presentation
     built from facts on https://batt.club/ (full name Bayard Argentan Tennis de

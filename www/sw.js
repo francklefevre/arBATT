@@ -20,7 +20,7 @@
  * ---------------------------------------------------------------------------
  */
 
-var CACHE_VERSION = "arbatt-v0_1_10";
+var CACHE_VERSION = "arbatt-v0_1_11";
 
 var APP_SHELL = [
   "./",
@@ -35,7 +35,8 @@ var APP_SHELL = [
   "./icons/icon.svg",
   "./icons/BATT_Man_2026.svg",
   "./icons/icon-192.png",
-  "./icons/icon-512.png"
+  "./icons/icon-512.png",
+  "./media/salle.jpg"
 ];
 
 self.addEventListener("install", function (event) {
