@@ -34,10 +34,14 @@
     version: "?",
     warmupSeconds: 120,
     timeoutSeconds: 60,
+    restSeconds: 60,
     accelReturns: 13,
     gameMinutes: 10,
     accelPointsThreshold: 18
   };
+
+  // Doubles: after the between-games rest closes, prompt for the service.
+  var pendingChooserAfterRest = false;
 
   // Receiver's good-return counter, only meaningful under the acceleration rule.
   var returnCount = 0;
@@ -58,10 +62,17 @@
     for (var i = 0; i < screens.length; i++) {
       screens[i].classList.toggle("hidden", screens[i].id !== screenId);
     }
-    // Leaving the scoreboard: stop the game clock from ticking in the background.
+    // Leaving the scoreboard: stop the clock and dismiss transient overlays.
     if (screenId !== "screen-score") {
       stopGameClockTick();
       if (gameClock && gameClock.isRunning()) { gameClock.pause(); }
+      stopTick();
+      timer = null;
+      document.getElementById("timer-overlay").classList.add("hidden");
+      document.getElementById("dchooser").classList.add("hidden");
+      document.getElementById("sanction").classList.add("hidden");
+      pendingChooserAfterRest = false;
+      gameClockResumeAfterModal = false;
     }
     arbattLog("UI", 2001, "Show screen " + screenId);
   }
@@ -86,6 +97,9 @@
           }
           if (typeof data.timeoutSeconds === "number") {
             appConfig.timeoutSeconds = data.timeoutSeconds;
+          }
+          if (typeof data.restSeconds === "number") {
+            appConfig.restSeconds = data.restSeconds;
           }
           if (typeof data.accelReturns === "number") {
             appConfig.accelReturns = data.accelReturns;
@@ -247,6 +261,26 @@
     return cardsFor(v.infractions[side]);
   }
 
+  /** Render the completed games as "11-4 · 9-11 · …" (winner's score in bold). */
+  function renderSetsSummary(v) {
+    var el = document.getElementById("sets-summary");
+    el.innerHTML = "";
+    if (!v.completedGames.length) {
+      el.classList.add("hidden");
+      return;
+    }
+    el.classList.remove("hidden");
+    v.completedGames.forEach(function (g) {
+      var a = g.points[0], b = g.points[1];
+      var span = document.createElement("span");
+      span.className = "set";
+      // Bold the winning side's score (winner is the side index 0/1).
+      span.innerHTML = (g.winner === 0 ? "<b>" + a + "</b>" : a) + "-" +
+        (g.winner === 1 ? "<b>" + b + "</b>" : b);
+      el.appendChild(span);
+    });
+  }
+
   function render() {
     if (!match) { return; }
     var v = match.view();
@@ -307,6 +341,9 @@
     document.getElementById("cards-1").textContent = sideCards(v, 1);
     document.getElementById("hint-referee").classList.toggle("hidden", !v.refereeCalled);
 
+    // Completed games scores (side 0 - side 1), winner's score highlighted.
+    renderSetsSummary(v);
+
     // Controls availability
     document.getElementById("btn-undo").disabled = !v.canUndo;
     document.getElementById("btn-timeout-0").disabled = v.timeoutsUsed[0] || v.finished;
@@ -317,17 +354,17 @@
         v.finished || v.points[0] !== 0 || v.points[1] !== 0;
     }
 
-    // Doubles: when a new game has just begun, prompt for the designation.
-    if (mode === "doubles" && !v.finished && v.gameIndex > lastGameIndex) {
-      lastGameIndex = v.gameIndex;
-      openServiceChooser(true);
-    }
-    lastGameIndex = v.gameIndex;
-
-    // Game clock: (re)start a fresh clock when entering a new game.
+    // A brand-new game just began (game index advanced since last setup).
     if (!v.finished && v.gameIndex !== gameClockGameIndex) {
       gameClockGameIndex = v.gameIndex;
-      startGameClock();
+      lastGameIndex = v.gameIndex;
+      startGameClock(); // paused immediately if a rest overlay opens below
+      if (v.gameIndex > 0) {
+        // Between games: automatic 1-minute rest. In doubles the service
+        // designation is prompted once the rest is closed.
+        pendingChooserAfterRest = (mode === "doubles");
+        openRest();
+      }
     }
     if (v.finished) { stopGameClockTick(); }
 
@@ -440,6 +477,13 @@
     arbattLog("UI", 2011, "Open timer '" + title + "' (" + seconds + "s)");
   }
 
+  /** Open the automatic between-games rest countdown (1 min by default). */
+  function openRest() {
+    openTimer("Repos entre les manches", appConfig.restSeconds);
+    arbattLog("UI", 2070, "Auto rest between games (" +
+      appConfig.restSeconds + "s)");
+  }
+
   function closeTimer() {
     stopTick();
     timer = null;
@@ -452,6 +496,11 @@
     }
     gameClockResumeAfterModal = false;
     arbattLog("UI", 2012, "Close timer");
+    // After the between-games rest, prompt the doubles service designation.
+    if (pendingChooserAfterRest && match && !match.view().finished) {
+      pendingChooserAfterRest = false;
+      openServiceChooser(true);
+    }
   }
 
   function bindTimer() {

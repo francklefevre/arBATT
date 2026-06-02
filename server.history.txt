@@ -4,6 +4,29 @@ Free software developed by Franck LEFEVRE for K1 ( https://k1info.com ),
 with the help of his team of kind and playful robots.
 ============================================================================
 
+2026-06-02 18:15 — v0.1.7 — Automatic between-games rest + completed-games summary.
+  Features (field requests from Franck):
+    - Automatic 1-minute rest between games: when a game ends (and the match
+      is not over), the rest countdown overlay opens automatically (reusing the
+      timer overlay, new ARBATT_REST_SECONDS=60). The game clock is paused
+      during the rest. In doubles, the service-designation chooser now opens
+      AFTER the rest is closed (was: immediately at the new game).
+    - Completed-games summary on the scoreboard: a "11-4 · 9-11 · …" line (new
+      #sets-summary), winner's score bold, built from view().completedGames.
+  Plumbing:
+    - render(): unified new-game detection (game clock reset + auto rest +
+      deferred doubles chooser). show() now dismisses transient overlays
+      (timer/chooser/sanction) and clears pending flags when leaving the
+      scoreboard, so navigation can't leave a stray overlay behind.
+    - server.py publishes restSeconds in www/app-config.json.
+  Tests:
+    - tests/test_ui_dom.js updated: sets summary hidden at start then "11-0"
+      after a game; rest overlay auto-opens between games (singles & doubles);
+      in doubles the chooser opens only after closing the rest. npm test 7/7.
+  Config: version 0.1.7; new ARBATT_REST_SECONDS. SW -> arbatt-v0_1_7.
+  Verified: app-config.json serves restSeconds; server.err.txt empty.
+  Deploy impact: SW cache bumped; no new service; no deploy/ or Docker assets.
+
 2026-06-02 18:00 — v0.1.6 — Game chronometry + automatic acceleration trigger.
   Engine/helper:
     - timer.js: new pure shouldAutoAccelerate(clockReached, totalPoints,

@@ -88,6 +88,7 @@ async function run() {
   ok($('name-0').textContent === 'Alice', 'card 0 shows Alice');
   ok($('card-0').classList.contains('serving'), 'Alice serves first (toss)');
   ok($('service-info').classList.contains('hidden'), 'no service line in singles');
+  ok($('sets-summary').classList.contains('hidden'), 'sets summary hidden at match start');
 
   click($('card-0'));
   ok($('points-0').textContent === '1', 'singles: point registered (1)');
@@ -102,6 +103,15 @@ async function run() {
   ok($('games-0').textContent === '1', 'singles: game won at 11');
   ok($('points-0').textContent === '0', 'singles: points reset for game 2');
   ok($('card-1').classList.contains('serving'), 'first server alternates in game 2');
+
+  // Past game score is now summarised, and the 1-minute rest auto-opens.
+  ok(!$('sets-summary').classList.contains('hidden'), 'sets summary shown after a game');
+  ok($('sets-summary').textContent.replace(/\s/g, '') === '11-0',
+    'sets summary shows 11-0');
+  ok(!$('timer-overlay').classList.contains('hidden'), 'between-games rest auto-opens');
+  ok($('timer-title').textContent.indexOf('Repos') === 0, 'rest overlay titled "Repos"');
+  click($('timer-close'));
+  ok($('timer-overlay').classList.contains('hidden'), 'rest overlay closes');
 
   // ============================ DOUBLES ===================================
   click($('btn-quit'));
@@ -123,11 +133,14 @@ async function run() {
   click($('card-0'));
   ok($('points-0').textContent === '1', 'doubles: team point registered');
 
-  // Win game 1 for team A to trigger the automatic designation chooser.
+  // Win game 1 for team A: the rest opens first, then (on close) the chooser.
   for (let i = 0; i < 10; i++) { click($('card-0')); }
   ok($('games-0').textContent === '1', 'doubles: team A won game 1');
+  ok(!$('timer-overlay').classList.contains('hidden'),
+    'doubles: between-games rest auto-opens');
+  click($('timer-close'));
   ok(!$('dchooser').classList.contains('hidden'),
-    'service chooser auto-opens at the new game');
+    'service chooser opens after the rest');
   ok($('dchooser-servers').querySelectorAll('button').length === 2,
     'chooser offers the 2 players of the serving pair');
 

@@ -55,7 +55,9 @@ en appliquant les règles du *Manuel pratique d'arbitre de club* de la FFTT
   (+2) → rouge (juge-arbitre), avec points de pénalité attribués à l'adversaire.
 - ⏲️ **Chronométrie des manches** : horloge de manche (10 min) sur le tableau de
   marque, qui **déclenche automatiquement** l'accélération à la limite si moins
-  de 18 points ont été marqués.
+  de 18 points ont été marqués. **Repos d'1 min automatisé** entre les manches.
+- 🧾 **Résumé des manches** : les scores des manches déjà jouées (ex. « 11-4 ·
+  9-11 ») s'affichent sur la page de score, à côté du nombre de manches.
 - 🦇 Aux couleurs du club : logo **BATT-Man** (Bayard Argentan Tennis de Table).
 - 📋 **Déroulé de la partie** : les étapes d'une partie dans l'ordre, chacune
   avec un encadré « À ce stade je ne dois pas oublier ».
@@ -213,7 +215,7 @@ donc toujours un état exact.
 > la chronométrie des manches sera ajoutée ; en attendant, l'activation est
 > manuelle, ce qui est réglementaire (« à la demande des 2 joueurs »).
 
-### Chronométrie & accélération automatique
+### Chronométrie, repos & accélération automatique
 
 Le tableau de marque affiche une **horloge de manche** (comptage croissant) avec
 un bouton pause/reprise. Quand elle atteint **`ARBATT_GAME_MINUTES`** (10 min) et
@@ -221,6 +223,12 @@ que moins de **`ARBATT_ACCEL_POINTS_THRESHOLD`** (18) points ont été marqués 
 la manche, la **règle d'accélération s'active automatiquement** (bip + vibration).
 L'horloge se réinitialise à chaque manche et se met en pause pendant les
 chronos de temps mort / période d'adaptation.
+
+À la **fin de chaque manche** (sauf la dernière), un **repos d'1 minute**
+(`ARBATT_REST_SECONDS`) s'ouvre **automatiquement** ; en double, la désignation
+du service de la manche suivante est proposée **après** ce repos. Les **scores
+des manches déjà jouées** sont résumés en haut du tableau (le score gagnant en
+surbrillance).
 
 ### Cartons & sanctions
 
@@ -258,6 +266,7 @@ priorité est : `param.json` → `secret.json` → variable d'environnement.
 | `ARBATT_DEFAULT_DOCUMENT`| string  | `index.html`  | Document servi pour un répertoire. |
 | `ARBATT_WARMUP_SECONDS`  | int     | `120`         | Durée du chrono de période d'adaptation (s). |
 | `ARBATT_TIMEOUT_SECONDS` | int     | `60`          | Durée du chrono de temps mort (s). |
+| `ARBATT_REST_SECONDS`    | int     | `60`          | Durée du repos automatique entre les manches (s). |
 | `ARBATT_ACCEL_RETURNS`   | int     | `13`          | Nombre de renvois du relanceur donnant le point (règle d'accélération). |
 | `ARBATT_GAME_MINUTES`    | int     | `10`          | Durée de manche (min) avant déclenchement de l'accélération. |
 | `ARBATT_ACCEL_POINTS_THRESHOLD` | int | `18`       | Seuil de points sous lequel l'accélération se déclenche à la limite de temps. |
@@ -275,8 +284,8 @@ priorité est : `param.json` → `secret.json` → variable d'environnement.
 - **`config/*.json`** — objets JSON. Les clés commençant par `_` sont purement
   documentaires (notice de licence, description) et sont ignorées au chargement.
 - **`www/app-config.json`** — `{"version", "warmupSeconds", "timeoutSeconds",
-  "accelReturns", "gameMinutes", "accelPointsThreshold"}`, **généré** au
-  démarrage depuis `param.json` (lu par la PWA).
+  "restSeconds", "accelReturns", "gameMinutes", "accelPointsThreshold"}`,
+  **généré** au démarrage depuis `param.json` (lu par la PWA).
 - **`logs/server.log`** — une ligne par événement :
   `STAMP [TAG] #NNNN message` (voir ci-dessous).
 - **`logs/server.err.txt`** — mêmes lignes mais limitées aux `ERROR`/`WARN` ;
@@ -339,7 +348,7 @@ des points, mode simple/double, désignation du service, panneau d'accélératio
 - [x] **Cartons & sanctions** (jaune, jaune+rouge, pénalités de points).
 - [x] **Chronométrie des manches** (10 min) + déclenchement **automatique** de
       l'accélération.
-- [ ] **Repos entre manches** (1 min) automatisé et chronométrage fin (pauses).
+- [x] **Repos entre manches** (1 min) automatisé + **résumé des manches** jouées.
 - [ ] **Sauvegarde** des parties dans `dynamic/` et feuille de partie.
 - [ ] Génération du **QR code** de mise à disposition.
 
