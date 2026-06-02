@@ -1,0 +1,307 @@
+/*
+ * arBATT - Table tennis club referee companion (PWA)
+ *
+ * Free software: you may do whatever you want with it.
+ * Developed by Franck LEFEVRE for K1 ( https://k1info.com ),
+ * with the help of his team of kind and playful robots.
+ *
+ * Please use the enormous power of this software to do good things
+ * for things and people, always making sure it harms nothing and no one.
+ *
+ * ---------------------------------------------------------------------------
+ * Mobile-first stylesheet. The scoreboard is designed for one-handed use at
+ * the umpire's table: two large tap targets, high contrast, no scrolling.
+ * ---------------------------------------------------------------------------
+ */
+
+:root {
+  --green: #0b6e4f;
+  --green-dark: #074d37;
+  --bg: #10151a;
+  --card: #1b2733;
+  --card-b: #243443;
+  --text: #f2f5f7;
+  --muted: #9bb0c0;
+  --accent: #f4b740;
+  --danger: #d9534f;
+  --serve: #f4b740;
+  --radius: 16px;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  height: 100%;
+  background: var(--bg);
+  color: var(--text);
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+  padding: env(safe-area-inset-top) env(safe-area-inset-right)
+           env(safe-area-inset-bottom) env(safe-area-inset-left);
+}
+
+/* ---- Header / footer ---- */
+.app-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  padding: 10px 16px;
+  background: var(--green-dark);
+}
+.app-header h1 { margin: 0; font-size: 1.3rem; letter-spacing: 1px; }
+.version { color: var(--muted); font-size: .8rem; }
+
+.app-footer {
+  padding: 8px 16px;
+  text-align: center;
+  color: var(--muted);
+}
+
+main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 16px;
+}
+
+/* ---- Screens ---- */
+.screen { flex: 1; display: flex; flex-direction: column; }
+.hidden { display: none !important; }
+.tagline { color: var(--muted); margin: 4px 0 18px; }
+
+h2 { margin: 0 0 16px; }
+
+/* ---- Home menu ---- */
+.hero-logo {
+  display: block;
+  height: 30vh;
+  max-height: 240px;
+  width: auto;
+  margin: 4px auto 6px;
+  filter: drop-shadow(0 6px 14px rgba(0, 0, 0, .4));
+}
+.menu { display: grid; gap: 12px; }
+.menu-item {
+  display: flex; align-items: center; gap: 14px;
+  padding: 18px; border: none; border-radius: var(--radius);
+  background: var(--card); color: var(--text);
+  font-size: 1.1rem; text-align: left; cursor: pointer;
+}
+.menu-item:disabled { opacity: .45; cursor: not-allowed; }
+.menu-item:not(:disabled):active { background: var(--card-b); }
+.menu-icon { font-size: 1.6rem; }
+.menu-label em { color: var(--muted); font-style: normal; font-size: .85rem; }
+
+/* ---- Forms ---- */
+.form { display: grid; gap: 14px; }
+.form label { display: grid; gap: 6px; color: var(--muted); }
+.form label.inline { grid-template-columns: 1fr auto; align-items: center; }
+.form input, .form select {
+  padding: 12px; border-radius: 10px; border: 1px solid var(--card-b);
+  background: var(--card); color: var(--text); font-size: 1rem;
+}
+fieldset {
+  border: 1px solid var(--card-b); border-radius: 12px; padding: 12px;
+  display: grid; gap: 10px;
+}
+legend { color: var(--accent); padding: 0 6px; }
+
+.actions { display: flex; gap: 12px; margin-top: 18px; }
+.actions button { flex: 1; }
+.btn-secondary.full, .btn-primary.full { width: 100%; }
+
+/* Segmented radio (Simple / Double) */
+.seg { display: flex; gap: 10px; }
+.seg label {
+  flex: 1; text-align: center; padding: 10px; border-radius: 10px;
+  background: var(--card); color: var(--text); cursor: pointer;
+}
+.seg input { margin-right: 6px; }
+
+.btn-primary, .btn-secondary {
+  padding: 14px; border: none; border-radius: 12px;
+  font-size: 1rem; cursor: pointer;
+}
+.btn-primary { background: var(--green); color: #fff; }
+.btn-secondary { background: var(--card-b); color: var(--text); }
+.btn-primary:active, .btn-secondary:active { filter: brightness(1.2); }
+
+/* ---- Scoreboard ---- */
+.context {
+  display: flex; gap: 10px; align-items: center; justify-content: center;
+  color: var(--muted); margin-bottom: 10px;
+}
+.badge {
+  background: var(--accent); color: #000; border-radius: 999px;
+  padding: 2px 10px; font-size: .8rem; font-weight: 700;
+}
+
+.scoreboard {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  min-height: 0;
+}
+.player-card {
+  position: relative;
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  align-items: center;
+  border: 3px solid transparent;
+  border-radius: var(--radius);
+  background: var(--card);
+  color: var(--text);
+  cursor: pointer;
+  padding: 14px 8px;
+  overflow: hidden;
+}
+.player-card.serving { border-color: var(--serve); }
+.player-card:active { background: var(--card-b); }
+
+.serve-dot {
+  position: absolute; top: 10px; right: 12px;
+  color: var(--serve); font-size: 1.4rem; opacity: 0;
+}
+.player-card.serving .serve-dot { opacity: 1; }
+
+.p-name { font-size: 1rem; color: var(--muted); }
+.p-points {
+  font-size: 22vw; line-height: 1; font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+.p-games {
+  /* Bigger games counter, lifted well above the left/right end tags. */
+  font-size: 2.4rem; color: var(--accent); font-weight: 800;
+  line-height: 1; margin-bottom: 34px;
+}
+.p-games::before {
+  content: "manches "; display: block;
+  color: var(--muted); font-weight: 400; font-size: .8rem;
+}
+.end-tag {
+  position: absolute; bottom: 6px; left: 0; right: 0;
+  text-align: center; font-size: .75rem; color: var(--muted);
+}
+
+.announce {
+  text-align: center; font-size: 1.3rem; font-weight: 700;
+  margin: 12px 0; min-height: 1.6rem;
+}
+
+.service-info {
+  text-align: center; font-size: 1.05rem; margin: -6px 0 6px; color: var(--serve);
+}
+.service-info b { color: var(--text); }
+
+.hints { text-align: center; min-height: 1.2rem; display: grid; gap: 2px; }
+.hint { display: inline-block; color: var(--accent); font-size: .9rem; }
+
+/* Acceleration panel */
+.accel-panel {
+  border: 2px solid var(--accent); border-radius: 12px;
+  padding: 10px; margin: 8px 0; text-align: center;
+}
+.accel-tag { display: block; color: var(--accent); font-weight: 700; }
+.accel-counter { font-size: 1.3rem; margin: 8px 0; }
+.accel-counter b { font-size: 1.8rem; color: var(--accent); }
+.accel-actions { display: flex; gap: 10px; }
+.accel-actions button { flex: 1; }
+.btn-secondary.active { background: var(--accent); color: #000; }
+
+/* Doubles service designation chooser */
+.dchooser-label { color: var(--muted); margin: 10px 0 6px; }
+.dchooser-row { display: flex; gap: 10px; justify-content: center; }
+.dchooser-row button {
+  flex: 1; padding: 14px 8px; border: 2px solid var(--card-b); border-radius: 12px;
+  background: var(--card); color: var(--text); font-size: 1rem; cursor: pointer;
+}
+.dchooser-row button.sel { border-color: var(--accent); background: var(--card-b); }
+
+.controls {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+  margin-top: 12px;
+}
+.controls button { padding: 12px; font-size: .95rem; }
+.controls button:disabled { opacity: .4; }
+
+/* ---- Match over / rules ---- */
+.result { font-size: 1.3rem; font-weight: 700; text-align: center; }
+.games-list, .rules { line-height: 1.7; }
+.games-list { list-style: none; padding: 0; text-align: center; }
+
+/* ---- Match flow (déroulé) ---- */
+.flow { list-style: none; padding: 0; margin: 8px 0; display: grid; gap: 14px; }
+.flow-step {
+  background: var(--card); border-radius: var(--radius);
+  padding: 14px 16px;
+}
+.flow-step h3 { margin: 0 0 6px; color: var(--text); }
+.flow-step p { margin: 0 0 10px; color: var(--muted); line-height: 1.5; }
+/* The recurring "À ce stade je ne dois pas oublier" reminder box. */
+.remember {
+  border-left: 4px solid var(--accent);
+  background: rgba(244, 183, 64, .12);
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: .95rem;
+  line-height: 1.45;
+}
+.remember::before {
+  content: "⚠️ ";
+}
+
+@media (min-width: 620px) {
+  .p-points { font-size: 8rem; }
+}
+
+/* ---- Countdown timer overlay ---- */
+.overlay {
+  position: fixed; inset: 0;
+  background: rgba(7, 11, 14, .92);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 1000;
+  padding: 24px;
+}
+.timer-box { text-align: center; width: 100%; max-width: 380px; }
+.timer-title { font-size: 1.4rem; margin: 0 0 18px; color: var(--accent); }
+
+/* Circular progress ring driven by a CSS variable --p (0..1) set from JS. */
+.timer-ring {
+  --p: 0;
+  width: 240px; height: 240px; max-width: 70vw; max-height: 70vw;
+  margin: 0 auto 16px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  background:
+    radial-gradient(closest-side, var(--bg) 78%, transparent 79% 100%),
+    conic-gradient(var(--green) calc(var(--p) * 360deg), var(--card-b) 0deg);
+}
+.timer-ring.warn {
+  background:
+    radial-gradient(closest-side, var(--bg) 78%, transparent 79% 100%),
+    conic-gradient(var(--danger) calc(var(--p) * 360deg), var(--card-b) 0deg);
+}
+.timer-ring.done {
+  background:
+    radial-gradient(closest-side, var(--bg) 78%, transparent 79% 100%),
+    conic-gradient(var(--danger) 360deg, var(--danger) 0deg);
+  animation: pulse .6s ease-in-out 0s 6 alternate;
+}
+@keyframes pulse { from { filter: brightness(1); } to { filter: brightness(1.6); } }
+
+.timer-time {
+  font-size: 3.4rem; font-weight: 800; font-variant-numeric: tabular-nums;
+}
+.timer-state { color: var(--muted); min-height: 1.4rem; margin: 4px 0 18px; }
+.timer-controls { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+.timer-controls button { padding: 14px 8px; }

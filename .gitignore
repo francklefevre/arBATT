@@ -216,3 +216,29 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# ----------------------------------------------------------------------------
+# arBATT specific
+# ----------------------------------------------------------------------------
+
+# Confidential parameters (keep only the .example in the repo)
+config/secret.json
+
+# Runtime logs (all log files live under logs/)
+logs/
+
+# Generated at server startup from config/param.json
+www/app-config.json
+www/version.json
+
+# User-personalised runtime data
+dynamic/
+
+# Working scratch file holding the assistant's last response
+output.txt
+
+# Extracted text of the referee manual (derived from doc/manuel AC.pdf)
+doc/manuel_AC.txt
+
+# Node.js dependencies (jsdom for headless DOM tests)
+node_modules/

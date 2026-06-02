@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<!--
+  arBATT - Table tennis club referee companion (PWA)
+
+  Free software: you may do whatever you want with it.
+  Developed by Franck LEFEVRE for K1 ( https://k1info.com ),
+  with the help of his team of kind and playful robots.
+
+  Please use the enormous power of this software to do good things
+  for things and people, always making sure it harms nothing and no one.
+-->
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#0b6e4f" />
+  <title>arBATT — Arbitre de club</title>
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="icon" href="icons/BATT_Man_2026.svg" type="image/svg+xml" />
+  <link rel="apple-touch-icon" href="icons/icon-192.png" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <!-- Application header: title + live version number (filled by app.js) -->
+  <header class="app-header">
+    <h1>arBATT</h1>
+    <span class="version" id="version">v—</span>
+  </header>
+
+  <main id="main">
+
+    <!-- ============================ HOME MENU ============================ -->
+    <section class="screen" id="screen-menu">
+      <img class="hero-logo" src="icons/BATT_Man_2026.svg"
+           alt="BATT-Man — Bayard Argentan Tennis de Table" />
+      <p class="tagline">L'assistant de l'arbitre de club de tennis de table.</p>
+      <nav class="menu">
+        <button class="menu-item" data-action="goto" data-target="screen-newmatch">
+          <span class="menu-icon">🏓</span>
+          <span class="menu-label">Comptage des points</span>
+        </button>
+        <button class="menu-item" id="menu-warmup">
+          <span class="menu-icon">⏱️</span>
+          <span class="menu-label">Période d'adaptation <em>(2 min)</em></span>
+        </button>
+        <button class="menu-item" data-action="goto" data-target="screen-flow">
+          <span class="menu-icon">📋</span>
+          <span class="menu-label">Déroulé de la partie</span>
+        </button>
+        <button class="menu-item" disabled>
+          <span class="menu-icon">🟨</span>
+          <span class="menu-label">Cartons &amp; sanctions <em>(à venir)</em></span>
+        </button>
+        <button class="menu-item" data-action="goto" data-target="screen-rules">
+          <span class="menu-icon">📖</span>
+          <span class="menu-label">Aide-mémoire des règles</span>
+        </button>
+      </nav>
+    </section>
+
+    <!-- ========================= NEW MATCH SETUP ======================== -->
+    <section class="screen hidden" id="screen-newmatch">
+      <h2>Nouvelle partie</h2>
+      <form id="form-newmatch" class="form">
+        <fieldset>
+          <legend>Type de partie</legend>
+          <div class="seg" id="mode-seg">
+            <label><input type="radio" name="mode" value="singles" checked /> Simple</label>
+            <label><input type="radio" name="mode" value="doubles" /> Double</label>
+          </div>
+        </fieldset>
+
+        <!-- Singles names -->
+        <div id="names-singles">
+          <label>Joueur A
+            <input type="text" id="nameA" value="Joueur A" maxlength="24" />
+          </label>
+          <label>Joueur B
+            <input type="text" id="nameB" value="Joueur B" maxlength="24" />
+          </label>
+        </div>
+
+        <!-- Doubles names: team A = players 0/1, team B = players 2/3 -->
+        <div id="names-doubles" class="hidden">
+          <fieldset>
+            <legend>Équipe A</legend>
+            <label>Joueur A1
+              <input type="text" id="name0" value="Joueur A1" maxlength="20" />
+            </label>
+            <label>Joueur A2
+              <input type="text" id="name1" value="Joueur A2" maxlength="20" />
+            </label>
+          </fieldset>
+          <fieldset>
+            <legend>Équipe B</legend>
+            <label>Joueur B1
+              <input type="text" id="name2" value="Joueur B1" maxlength="20" />
+            </label>
+            <label>Joueur B2
+              <input type="text" id="name3" value="Joueur B2" maxlength="20" />
+            </label>
+          </fieldset>
+        </div>
+
+        <fieldset>
+          <legend>Format</legend>
+          <label class="inline">Nombre de manches gagnantes
+            <select id="gamesToWin">
+              <option value="2">2 (au meilleur des 3)</option>
+              <option value="3" selected>3 (au meilleur des 5)</option>
+              <option value="4">4 (au meilleur des 7)</option>
+            </select>
+          </label>
+          <label class="inline">Points par manche
+            <input type="number" id="pointsPerGame" value="11" min="1" max="21" />
+          </label>
+        </fieldset>
+
+        <fieldset>
+          <legend>Tirage au sort</legend>
+          <label class="inline">Premier serveur
+            <select id="firstServer"></select>
+          </label>
+          <!-- Doubles only: the first receiver (must be on the opposite team) -->
+          <label class="inline hidden" id="row-firstReceiver">Premier relanceur
+            <select id="firstReceiver"></select>
+          </label>
+          <label class="inline">Côté gauche au départ
+            <select id="firstSide"></select>
+          </label>
+        </fieldset>
+
+        <button type="button" class="btn-secondary full" id="setup-warmup">
+          ⏱️ Lancer la période d'adaptation (2 min)
+        </button>
+
+        <div class="actions">
+          <button type="button" class="btn-secondary" data-action="goto" data-target="screen-menu">Retour</button>
+          <button type="submit" class="btn-primary">Démarrer</button>
+        </div>
+      </form>
+    </section>
+
+    <!-- =========================== SCOREBOARD =========================== -->
+    <section class="screen hidden" id="screen-score">
+      <!-- Match / game context line -->
+      <div class="context">
+        <span id="ctx-game">Manche 1</span>
+        <span id="ctx-bestof"></span>
+        <span id="ctx-deciding" class="badge hidden">Manche décisive</span>
+      </div>
+
+      <!-- The two big tappable score cards -->
+      <div class="scoreboard">
+        <button class="player-card" id="card-0" data-player="0">
+          <span class="serve-dot" id="serve-0" title="Au service">●</span>
+          <span class="p-name" id="name-0">Joueur A</span>
+          <span class="p-points" id="points-0">0</span>
+          <span class="p-games" id="games-0">0</span>
+          <span class="end-tag" id="end-0"></span>
+        </button>
+        <button class="player-card" id="card-1" data-player="1">
+          <span class="serve-dot" id="serve-1" title="Au service">●</span>
+          <span class="p-name" id="name-1">Joueur B</span>
+          <span class="p-points" id="points-1">0</span>
+          <span class="p-games" id="games-1">0</span>
+          <span class="end-tag" id="end-1"></span>
+        </button>
+      </div>
+
+      <!-- Live announcement (server score first) -->
+      <div class="announce" id="announce">0 - 0</div>
+
+      <!-- Doubles only: explicit server -> receiver line -->
+      <div class="service-info hidden" id="service-info"></div>
+
+      <!-- Contextual hints -->
+      <div class="hints">
+        <span class="hint hidden" id="hint-wipe">🧽 Essuyage possible (tous les 6 points)</span>
+        <span class="hint hidden" id="hint-deuce">⚠️ Égalité : service à chaque point</span>
+        <span class="hint hidden" id="hint-invert">🔄 Manche décisive : camps changés et relanceurs inversés</span>
+      </div>
+
+      <!-- Acceleration ("expedite") panel: shown once the rule is active.
+           Counts the receiver's good returns; at the threshold the point goes
+           to the receiver. -->
+      <div class="accel-panel hidden" id="accel-panel">
+        <span class="accel-tag">⏩ Accélération — service à chaque point</span>
+        <div class="accel-counter">
+          Renvois du relanceur : <b id="accel-count">0</b> / <span id="accel-max">13</span>
+        </div>
+        <div class="accel-actions">
+          <button class="btn-secondary" id="btn-return">+1 renvoi</button>
+          <button class="btn-secondary" id="btn-return-reset">↺ renvois</button>
+        </div>
+      </div>
+
+      <!-- Secondary controls -->
+      <div class="controls">
+        <button class="btn-secondary" id="btn-undo">↩︎ Annuler</button>
+        <button class="btn-secondary" id="btn-timeout-0">⏸️ Temps mort A</button>
+        <button class="btn-secondary" id="btn-timeout-1">⏸️ Temps mort B</button>
+        <button class="btn-secondary hidden" id="btn-service">🔁 Service</button>
+        <button class="btn-secondary" id="btn-accel">⏩ Accélération</button>
+        <button class="btn-secondary" id="btn-quit" data-action="goto" data-target="screen-menu">Menu</button>
+      </div>
+    </section>
+
+    <!-- ============================ MATCH OVER ========================== -->
+    <section class="screen hidden" id="screen-over">
+      <h2>Fin de la partie</h2>
+      <p class="result" id="final-result"></p>
+      <ul class="games-list" id="games-list"></ul>
+      <div class="actions">
+        <button class="btn-secondary" data-action="goto" data-target="screen-menu">Menu</button>
+        <button class="btn-primary" data-action="goto" data-target="screen-newmatch">Nouvelle partie</button>
+      </div>
+    </section>
+
+    <!-- ============================== RULES ============================= -->
+    <section class="screen hidden" id="screen-rules">
+      <h2>Aide-mémoire</h2>
+      <ul class="rules">
+        <li>Manche gagnée à <strong>11 points</strong> avec <strong>2 points d'écart</strong>.</li>
+        <li>À <strong>10-10</strong>, le service change à <strong>chaque point</strong> ; sinon tous les 2 points.</li>
+        <li>Le premier serveur <strong>alterne</strong> à chaque manche.</li>
+        <li>On <strong>change de camp</strong> à chaque manche ; dans la manche décisive, dès qu'un joueur atteint <strong>5 points</strong>.</li>
+        <li>Annonce du score : <strong>serveur d'abord</strong>, puis relanceur.</li>
+        <li><strong>1 temps mort</strong> par joueur (ou par paire) et par partie (max 1 min).</li>
+        <li>Essuyage autorisé <strong>tous les 6 points</strong>.</li>
+      </ul>
+      <h3>En double</h3>
+      <ul class="rules">
+        <li>Le service va en <strong>diagonale</strong> (demi-camp droit vers demi-camp droit).</li>
+        <li>Le <strong>serveur change tous les 2 points</strong> et le relanceur devient serveur.</li>
+        <li>La paire qui sert désigne son serveur ; le relanceur est désigné en conséquence.</li>
+        <li>Manche décisive : à <strong>5 points</strong>, on change de camp <strong>et</strong> on <strong>inverse l'ordre des relanceurs</strong>.</li>
+      </ul>
+      <h3>Règle d'accélération</h3>
+      <ul class="rules">
+        <li>Déclenchée après <strong>10 min</strong> de jeu si moins de <strong>18 points</strong>, ou à la demande des 2 joueurs. Une fois active, elle le reste jusqu'à la fin.</li>
+        <li>Le <strong>serveur change à chaque point</strong>.</li>
+        <li>Si le relanceur réussit <strong>13 renvois</strong>, le serveur <strong>perd le point</strong>.</li>
+      </ul>
+      <div class="actions">
+        <button class="btn-secondary" data-action="goto" data-target="screen-menu">Retour</button>
+      </div>
+    </section>
+
+    <!-- ======================= MATCH FLOW (DÉROULÉ) ===================== -->
+    <!-- Chronological walk-through of a club match. Each step ends with a
+         "À ce stade je ne dois pas oublier" reminder box. Content distilled
+         from the FFTT "Manuel pratique d'arbitre de club". -->
+    <section class="screen hidden" id="screen-flow">
+      <h2>Déroulé de la partie</h2>
+      <p class="tagline">Les étapes d'une partie, dans l'ordre, avec les rappels clés.</p>
+
+      <ol class="flow">
+        <li class="flow-step">
+          <h3>1 · Avant d'arbitrer</h3>
+          <p>Je vérifie ma tenue (tenue de ville, chaussures de salle) et mon
+             matériel : pige, cartons (3 jaunes, 3 rouges, 2 blancs), jeton
+             bicolore, chronomètre, chiffon, crayon. Je me rapproche du
+             juge-arbitre.</p>
+          <div class="remember">À ce stade je ne dois pas oublier :
+            écouter les consignes particulières, recevoir la fiche de la partie,
+            y noter mon nom, prendre la (les) balle(s), et être à l'heure.</div>
+        </li>
+
+        <li class="flow-step">
+          <h3>2 · Entrée dans l'aire de jeu</h3>
+          <p>Je vérifie les conditions matérielles : marqueur à blanc, filet
+             (hauteur à la pige, alignement, tension), séparations alignées,
+             éclairage, sol ni glissant ni réfléchissant.</p>
+          <div class="remember">À ce stade je ne dois pas oublier :
+            rien ne doit être posé sur les séparations, et je signale tout
+            problème matériel au juge-arbitre (seul habilité à décider).</div>
+        </li>
+
+        <li class="flow-step">
+          <h3>3 · Arrivée des joueurs</h3>
+          <p>J'affiche « 0 – 0 » manches, je vérifie les dossards et l'identité,
+             je fais désigner le(s) conseilleur(s), je contrôle les tenues
+             (couleurs différentes de la balle) et les raquettes.</p>
+          <div class="remember">À ce stade je ne dois pas oublier :
+            afficher 0 – 0 manches ; en cas de doute sur une tenue ou une
+            raquette, en référer au juge-arbitre.</div>
+        </li>
+
+        <li class="flow-step">
+          <h3>4 · Tirage au sort</h3>
+          <p>Jeton bicolore. Le vainqueur choisit le service/la relance OU le
+             camp ; l'adversaire prend l'autre possibilité. En double, la paire
+             qui sert désigne son serveur, puis la paire qui relance son
+             relanceur.</p>
+          <div class="remember">À ce stade je ne dois pas oublier de NOTER :
+            le côté du premier service, le premier serveur (et, en double, le
+            premier relanceur). Le premier service se fera toujours du même côté.</div>
+        </li>
+
+        <li class="flow-step">
+          <h3>5 · Période d'adaptation</h3>
+          <p>Je donne la balle de la partie et je démarre le chronomètre.
+             Le marqueur reste sur « 0 – 0 » manches.</p>
+          <div class="remember">À ce stade je ne dois pas oublier :
+            2 minutes maximum, et le marqueur reste à 0 – 0 manches.</div>
+        </li>
+
+        <li class="flow-step">
+          <h3>6 · Début de la partie</h3>
+          <p>Je mets le marqueur à 0 – 0 points, je désigne le serveur de la
+             main et j'annonce : « 1ère manche, (nom du serveur), 0 – 0 ». Je
+             démarre le chronomètre de la manche.</p>
+          <div class="remember">À ce stade je ne dois pas oublier :
+            annoncer manche + nom du serveur + 0 – 0 ; lancer le chrono (10 min :
+            si &lt; 18 points, la règle d'accélération s'appliquera).</div>
+        </li>
+
+        <li class="flow-step">
+          <h3>7 · Pendant la manche</h3>
+          <p>Je surveille le service (ordre, camp), je juge la régularité et le
+             filet, je décide obstruction / point / balle à remettre, et
+             j'annonce la marque à chaque point.</p>
+          <div class="remember">À ce stade je ne dois pas oublier :
+            annoncer la marque à CHAQUE point, serveur d'abord ; le service
+            change tous les 2 points (à chaque point dès 10 – 10) ; essuyage
+            possible tous les 6 points ; 1 temps mort par joueur ou par paire.</div>
+        </li>
+
+        <li class="flow-step">
+          <h3>8 · D'une manche à la suivante</h3>
+          <p>Manche gagnée à 11 points avec 2 points d'écart. J'annonce le
+             gagnant puis le score, j'arrête puis relance le chrono (repos
+             1 min), je récupère la balle et je note le score sur la fiche.</p>
+          <div class="remember">À ce stade je ne dois pas oublier :
+            remettre le marqueur à blanc au retour des joueurs ; changer de camp ;
+            alterner le premier serveur ; en double, désigner serveur et
+            relanceur ; afficher le gain de la manche.</div>
+        </li>
+
+        <li class="flow-step">
+          <h3>9 · Fin de la partie</h3>
+          <p>J'annonce le résultat final (ex. : « Pierre gagne 3 manches à 2 »),
+             je note le score sur la fiche et je la signe. Je récupère la balle
+             et je remets le marqueur à blanc.</p>
+          <div class="remember">À ce stade je ne dois pas oublier :
+            faire signer la fiche par tout joueur sanctionné (en individuel) ;
+            remettre le marqueur à blanc ; rapporter la fiche au juge-arbitre.</div>
+        </li>
+      </ol>
+
+      <div class="actions">
+        <button class="btn-secondary" data-action="goto" data-target="screen-menu">Retour</button>
+      </div>
+    </section>
+
+    <!-- ===================== COUNTDOWN TIMER OVERLAY ==================== -->
+    <!-- Reused for the warm-up period (2 min) and for time-outs (1 min). -->
+    <div class="overlay hidden" id="timer-overlay" role="dialog" aria-modal="true">
+      <div class="timer-box">
+        <h2 class="timer-title" id="timer-title">Période d'adaptation</h2>
+        <div class="timer-ring" id="timer-ring">
+          <span class="timer-time" id="timer-time">02:00</span>
+        </div>
+        <p class="timer-state" id="timer-state">Prêt</p>
+        <div class="timer-controls">
+          <button class="btn-primary" id="timer-startpause">Démarrer</button>
+          <button class="btn-secondary" id="timer-reset">Réinitialiser</button>
+          <button class="btn-secondary" id="timer-close">Fermer</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- =============== DOUBLES SERVICE DESIGNATION OVERLAY ============== -->
+    <!-- Lets the umpire designate the server and receiver at the start of a
+         doubles game (only valid at 0-0). Buttons are built by app.js. -->
+    <div class="overlay hidden" id="dchooser" role="dialog" aria-modal="true">
+      <div class="timer-box">
+        <h2 class="timer-title" id="dchooser-title">Désignation du service</h2>
+        <p class="dchooser-label">Qui sert ?</p>
+        <div class="dchooser-row" id="dchooser-servers"></div>
+        <p class="dchooser-label">Qui relance ?</p>
+        <div class="dchooser-row" id="dchooser-receivers"></div>
+        <p class="timer-state" id="dchooser-state"></p>
+        <div class="timer-controls">
+          <button class="btn-primary" id="dchooser-confirm">Valider</button>
+          <button class="btn-secondary" id="dchooser-cancel">Annuler</button>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <footer class="app-footer">
+    <small>Logiciel libre — K1 ( k1info.com ) &amp; ses robots gentils. Restez SPORT !</small>
+  </footer>
+
+  <script src="js/log.js"></script>
+  <script src="js/timer.js"></script>
+  <script src="js/scorer.js"></script>
+  <script src="js/doubles.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

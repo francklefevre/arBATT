@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  arBATT app icon.
+  Free software developed by Franck LEFEVRE for K1 ( https://k1info.com ),
+  with the help of his team of kind and playful robots.
+-->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="arBATT">
+  <rect width="512" height="512" rx="96" fill="#0b6e4f"/>
+  <!-- Paddle blade -->
+  <ellipse cx="232" cy="232" rx="150" ry="150" fill="#d9534f"/>
+  <ellipse cx="232" cy="232" rx="118" ry="118" fill="#b53f3b"/>
+  <!-- Paddle handle -->
+  <rect x="300" y="300" width="60" height="150" rx="28" transform="rotate(45 330 375)" fill="#3a2a1a"/>
+  <!-- Ball -->
+  <circle cx="360" cy="156" r="46" fill="#f4b740"/>
+  <!-- Title initials -->
+  <text x="232" y="262" font-family="system-ui, Arial, sans-serif" font-size="120"
+        font-weight="800" text-anchor="middle" fill="#ffffff">aB</text>
+</svg>

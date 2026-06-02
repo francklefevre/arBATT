@@ -1,0 +1,146 @@
+arBATT — server.history.txt
+Modifications log (most recent on top). Each line is dated (local time).
+Free software developed by Franck LEFEVRE for K1 ( https://k1info.com ),
+with the help of his team of kind and playful robots.
+============================================================================
+
+2026-06-02 17:30 — v0.1.4 — Terminology, scoreboard polish, match-flow screen, git.
+  Field feedback from Franck after testing v0.1.2:
+    - Renamed "Échauffement" -> "Période d'adaptation" (the manual's official
+      term) in the menu, the setup button, the timer overlay title and app.js.
+    - Scoreboard games counter made bigger (2.4rem, bold) and lifted well above
+      the left/right end tags (margin-bottom + "manches" as a small block label)
+      so it no longer crowds the "◀ Gauche / Droite ▶" line.
+    - New menu activity "Déroulé de la partie": a 9-step chronological walk-
+      through of a club match, each step ending with a recurring reminder box
+      "À ce stade je ne dois pas oublier" (content from the manual). New
+      #screen-flow + .flow/.flow-step/.remember styles.
+  Tests:
+    - tests/test_ui_dom.js extended: rename present, flow screen opens with 9
+      steps and 9 reminder boxes, returns to menu. npm test -> 5/5 PASS.
+  Process:
+    - Franck authorised git for this project (overriding the earlier no-git
+      rule): at each validated version bump, run add + commit + push to
+      origin/main. This commit is the first such push (brings the whole project
+      under version control).
+  Config: version 0.1.4. SW CACHE_VERSION -> arbatt-v0_1_4.
+  Deploy impact: no new runtime asset/service; SW cache bumped. No deploy/ or
+    Docker assets in repo. kurt.json unchanged.
+
+2026-06-02 17:15 — v0.1.3 — Acceleration ("expedite") rule + jsdom test harness.
+  Tooling:
+    - Added package.json (npm scripts) and installed jsdom (dev dependency) so
+      the UI wiring can be tested headlessly. node_modules/ git-ignored.
+    - tests/run_all.js : runs every suite, compact PASS/FAIL summary (npm test).
+    - tests/test_ui_dom.js : real index.html loaded in jsdom; drives the UI
+      (form submit, card taps, mode switch, service chooser, accel panel) and
+      asserts the DOM. KEY GOTCHA captured in-file: jsdom fires
+      DOMContentLoaded asynchronously, so scripts must be eval'd once and we
+      must NOT dispatch DOMContentLoaded ourselves (else bootstrap runs twice,
+      binding every handler twice -> one tap = two points). This harness
+      retroactively validates the v0.1.1/v0.1.2 UI work end to end.
+  Feature - acceleration rule (FFTT manual p.16):
+    - scorer.js: new acceleratedBlocks() helper (shared with doubles via the
+      api export) -> under acceleration the server changes after EVERY point;
+      may start mid-game (records game+total at activation) and PERSISTS to the
+      end of the match. TTScorer/DoublesScorer gain activateAcceleration() and
+      expose `accelerated` in view(); both derive the cadence from state so
+      undo reverts the activation exactly.
+    - tests/test_acceleration.js : helper, activate at 0-0, activate mid-game,
+      persistence across games, undo revert, doubles rotation every point. Pass.
+    - UI: ⏩ Accélération button; once active, an acceleration panel shows the
+      receiver return counter (+1 renvoi / reset); reaching ARBATT_ACCEL_RETURNS
+      (13) awards the point to the receiver and resets; a normal point also
+      resets the counter. Rules screen documents the rule.
+  Config:
+    - param.json(.example): version 0.1.3; new ARBATT_ACCEL_RETURNS (13).
+    - server.py publishes accelReturns in www/app-config.json.
+  Verified: `node tests/run_all.js` -> ALL SUITES PASSED (5/5); server.py
+    syntax OK; app-config.json serves version 0.1.3 + accelReturns 13;
+    server.err.txt empty.
+  Deploy impact: SW CACHE_VERSION -> arbatt-v0_1_3 (no new web asset, but
+    bumped to refresh caches). package.json/jsdom are dev-only (tests); they do
+    not affect the runtime server. .gitignore updated (node_modules/). No
+    deploy/ or Docker assets in repo to touch. kurt.json unchanged.
+
+2026-06-02 17:05 — v0.1.2 — Doubles scoring mode.
+  Added:
+    - www/js/doubles.js : DoublesScorer state machine. 4-player rotation
+      (server = serveOrder[block%4], receiver = serveOrder[(block+1)%4]) using
+      the shared serviceBlocks() helper. Deciding-game receiving-order
+      inversion at 5 points (receiver = partner of base receiver) + end change.
+      Per-pair time-outs. setGameStart() for per-game server/receiver
+      designation. Everything derived from state -> exact undo.
+    - tests/test_doubles.js : rotation verified against the FFTT manual example
+      (Xavier serves Bernard), deuce cycling, deciding inversion, ends at 5,
+      match completion, setGameStart validation, time-outs, undo. All passing.
+    - UI: setup form gains a Simple/Double selector with 4 name fields and a
+      mode-aware toss (first server / first receiver / starting side); the
+      scoreboard renders pairs, a "server -> receiver" line, an inversion hint,
+      and a doubles service-designation overlay (auto-opens each game, also
+      reachable via the 🔁 Service button). Rules screen documents doubles.
+  Refactor:
+    - scorer.js: extracted serviceBlocks() (shared with doubles.js) to avoid
+      duplicating the every-2-points / every-point-at-deuce logic.
+  Verified: node tests/{test_scorer,test_timer,test_doubles}.js all pass; JS
+    syntax OK; no duplicate DOM ids; every getElementById target exists; assets
+    served 200; server.err.txt empty.
+  Deploy impact: still no deploy/ or Docker assets in repo. New web assets
+    (doubles.js) added to the service worker pre-cache (CACHE_VERSION bumped to
+    arbatt-v0_1_2). kurt.json unchanged (command/port identical).
+
+2026-06-02 16:50 — v0.1.1 — Club logo + warm-up and time-out countdown timers.
+  Added:
+    - www/js/timer.js : CountdownTimer engine with an INJECTABLE time source
+      (testable), start/pause/reset, remaining(ms/s), progress, mm:ss format.
+    - tests/test_timer.js : 30 assertions with a fake clock. All passing.
+    - UI: reusable countdown overlay (progress ring, <10s warning, beep +
+      vibration on finish). Warm-up (2 min) from the menu and the setup screen;
+      time-out (1 min) wired to the "Temps mort" buttons.
+    - PWA icons regenerated from the club logo BATT_Man_2026.svg (Inkscape
+      render + Pillow compositing onto the green theme); logo shown on the menu;
+      favicon + manifest svg icon point to the club logo.
+  Config:
+    - param.json(.example): version 0.1.1; new ARBATT_WARMUP_SECONDS (120) and
+      ARBATT_TIMEOUT_SECONDS (60).
+    - server.py now publishes www/app-config.json (version + the two durations)
+      instead of a bare version.json; the PWA reads it. SW updated accordingly.
+  Verified: timer + scorer tests pass; curl: app-config.json served with the
+    durations; all app-shell assets 200; server.err.txt empty.
+  Deploy impact: SW CACHE_VERSION -> arbatt-v0_1_1; .gitignore updated
+    (www/app-config.json). No deploy/ or Docker assets present to touch.
+
+2026-06-02 16:12 — v0.1.0 — Initial increment: project scaffolding + scoring engine.
+  Created:
+    - server.py            : minimal hermetic static web server for the PWA.
+                             Serves a single web-root (www/), rejects path
+                             traversal, parameterised host/port/Server header/
+                             web-root/default document. Logs via centralised
+                             Logger. Generates www/version.json from param.json
+                             at startup. Displays version at boot ([BOOT] tag).
+    - arbatt_log.py        : centralised logging (single routing function),
+                             format "STAMP [TAG] #NNNN message", per-tag enable,
+                             error mirror to logs/server.err.txt emptied at boot.
+    - arbatt_config.py     : config loader merging config/param.json +
+                             config/secret.json, each key overridable by an env
+                             var of the same name (typed coercion).
+    - config/param.json(.example), config/secret.json(.example).
+    - www/ PWA: index.html (menu + setup + scoreboard + over + rules screens),
+                css/style.css (mobile-first), js/log.js (client logger),
+                js/scorer.js (singles scoring state machine, derived server/ends,
+                exact undo), js/app.js (UI controller), manifest.webmanifest,
+                sw.js (offline app-shell cache), icons (svg + png 192/512/maskable).
+    - tests/test_scorer.js : 21 headless assertions, all passing.
+    - README.md, AGENTS_METHODS.md, kurt.json, .gitignore (arBATT section),
+      dynamic/ placeholder.
+  Verified:
+    - node tests/test_scorer.js -> ALL TESTS PASSED (21/21).
+    - curl: version.json served, correct MIME types, Server header = "arBATT",
+      path traversal (raw and percent-encoded, incl. /etc/passwd) -> 404, no
+      file leaked outside www/. logs/server.err.txt empty after a clean run.
+  Deploy impact review (per AGENTS.md checklist):
+    - No deploy/ directory, no Dockerfiles, no docker-compose, no Traefik, no
+      Prisma schema present in this project yet -> nothing to update there.
+    - Future deployment is described via kurt.json (orchestrator): taskName,
+      applicationName, directory, command "python3 ./server.py", serverPort 8080,
+      environment carrying ARBATT_* overrides. Updated accordingly.

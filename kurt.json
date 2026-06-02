@@ -1,0 +1,17 @@
+{
+  "taskName": "arBATT",
+  "applicationName": "arBATT",
+  "directory": "../arBATT",
+  "command": "python3 ./server.py",
+  "repoOwner": "francklefevre",
+  "gitToken": "",
+  "refresh": "",
+  "environment": {
+    "ARBATT_HOST": "0.0.0.0",
+    "ARBATT_PORT": "8080",
+    "ARBATT_WEBROOT": "www",
+    "ARBATT_SERVER_HEADER": "arBATT"
+  },
+  "serverPort": 8080,
+  "schedule": ""
+}
