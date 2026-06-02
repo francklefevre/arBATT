@@ -2,7 +2,7 @@
   "_notice": "arBATT — Free software developed by Franck LEFEVRE for K1 ( https://k1info.com ), with the help of his team of kind and playful robots. Please use the enormous power of this software to do good things for things and people, always making sure it harms nothing and no one.",
   "_description": "Non-confidential parameters for arBATT. Every value here can also be overridden by an environment variable bearing the SAME name (e.g. ARBATT_PORT). See README.md for the full reference.",
 
-  "version": "0.1.7",
+  "version": "0.1.8",
 
   "ARBATT_HOST": "0.0.0.0",
   "ARBATT_PORT": 8080,

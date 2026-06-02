@@ -227,9 +227,13 @@ config/secret.json
 # Runtime logs (all log files live under logs/)
 logs/
 
-# Generated at server startup from config/param.json
-www/app-config.json
+# Legacy generated file (replaced by app-config.json)
 www/version.json
+
+# NOTE: www/app-config.json IS committed so the PWA can be deployed as static
+# files (e.g. behind WordPress) without running the Python server. The dev
+# server regenerates it from config/param.json at startup (identical content
+# unless the version/params change, in which case commit the update).
 
 # User-personalised runtime data
 dynamic/

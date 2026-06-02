@@ -4,6 +4,32 @@ Free software developed by Franck LEFEVRE for K1 ( https://k1info.com ),
 with the help of his team of kind and playful robots.
 ============================================================================
 
+2026-06-02 18:30 — v0.1.8 — UI display fixes + static deployment kit.
+  Display fixes (field feedback):
+    - The server was shown twice (announce "(service A sur B)" + the service-info
+      line). Now #announce shows the SCORE ONLY (server's score first) and the
+      server is stated exactly once on a single "Service : …" line, in BOTH
+      modes (singles: "Service : X"; doubles: "Service : X → Y").
+    - Cards no longer overlap the player name: the player card switched from CSS
+      grid to a flex column; the cards line (.p-cards) is its own line above the
+      name and collapses when empty (:empty { display:none }).
+  Static deployment kit (per request — deploy a PWA behind an existing
+  WordPress without running the Python server):
+    - deploy/INSTALL.md: full guide (sub-directory of WordPress / sub-domain /
+      static hosts, HTTPS requirement, MIME, SW scope, app-config.json, updates,
+      QR code, and what NOT to do).
+    - www/.htaccess: Apache MIME types (.webmanifest etc.), no-cache for
+      sw.js/app-config.json, RewriteEngine Off inside the folder. Ignored by
+      servers that don't read .htaccess.
+    - www/app-config.json is now COMMITTED (un-ignored) so the static build
+      carries the version + durations; the dev server still regenerates it.
+  Tests: tests/test_ui_dom.js updated (single service line in singles, announce
+    is score-only). npm test -> 7/7 PASS.
+  Config: version 0.1.8. SW -> arbatt-v0_1_8.
+  Deploy impact: NEW deploy/INSTALL.md and www/.htaccess document/enable static
+    hosting; app-config.json committed. No docker/compose/traefik in this repo
+    (not that kind of project). kurt.json unchanged.
+
 2026-06-02 18:15 — v0.1.7 — Automatic between-games rest + completed-games summary.
   Features (field requests from Franck):
     - Automatic 1-minute rest between games: when a game ends (and the match

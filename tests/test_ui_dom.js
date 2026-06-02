@@ -87,13 +87,17 @@ async function run() {
   ok(visible('screen-score'), 'scoreboard shown after start');
   ok($('name-0').textContent === 'Alice', 'card 0 shows Alice');
   ok($('card-0').classList.contains('serving'), 'Alice serves first (toss)');
-  ok($('service-info').classList.contains('hidden'), 'no service line in singles');
+  ok(!$('service-info').classList.contains('hidden') &&
+     $('service-info').textContent.indexOf('Service') === 0,
+    'single service line shown in singles');
   ok($('sets-summary').classList.contains('hidden'), 'sets summary hidden at match start');
 
   click($('card-0'));
   ok($('points-0').textContent === '1', 'singles: point registered (1)');
   ok(!$('btn-undo').disabled, 'undo enabled after a point');
-  ok($('announce').textContent.indexOf('1 - 0') === 0, 'announce server-first 1-0');
+  ok($('announce').textContent.trim() === '1 - 0', 'announce shows the score only');
+  ok($('service-info').textContent === 'Service : Alice',
+    'server stated once on the service line');
 
   click($('btn-undo'));
   ok($('points-0').textContent === '0', 'undo brings score back to 0');

@@ -1,0 +1,1 @@
+{"version": "0.1.8", "warmupSeconds": 120, "timeoutSeconds": 60, "restSeconds": 60, "accelReturns": 13, "gameMinutes": 10, "accelPointsThreshold": 18}

@@ -178,9 +178,12 @@ legend { color: var(--accent); padding: 0 6px; }
 }
 .player-card {
   position: relative;
-  display: grid;
-  grid-template-rows: auto 1fr auto;
+  /* Flex column (not grid) so the cards line collapses cleanly when empty and
+     never overlaps the player name. */
+  display: flex;
+  flex-direction: column;
   align-items: center;
+  justify-content: center;
   border: 3px solid transparent;
   border-radius: var(--radius);
   background: var(--card);
@@ -198,11 +201,13 @@ legend { color: var(--accent); padding: 0 6px; }
 }
 .player-card.serving .serve-dot { opacity: 1; }
 
-/* Accumulated cards on a player/pair card (top-left). */
+/* Accumulated cards, shown on their own line above the name (collapses when
+   empty so they never overlap the player name). */
 .p-cards {
-  position: absolute; top: 8px; left: 10px;
-  font-size: .9rem; line-height: 1.2; text-align: left;
+  font-size: .95rem; line-height: 1.2; text-align: center;
+  padding: 0 6px; margin-bottom: 4px; word-break: break-word;
 }
+.p-cards:empty { display: none; }
 
 .p-name { font-size: 1rem; color: var(--muted); }
 .p-points {

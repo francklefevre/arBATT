@@ -29,6 +29,7 @@ en appliquant les règles du *Manuel pratique d'arbitre de club* de la FFTT
 - [Architecture du projet](#architecture-du-projet)
 - [Installation](#installation)
 - [Démarrage du serveur](#démarrage-du-serveur)
+- [Déploiement](#déploiement)
 - [Utilisation](#utilisation)
 - [Règles de comptage implémentées](#règles-de-comptage-implémentées)
 - [Paramètres de configuration](#paramètres-de-configuration)
@@ -81,7 +82,8 @@ arBATT/
 │   ├── index.html              # Menu + écrans (setup, score, fin, règles, déroulé)
 │   ├── manifest.webmanifest    # Manifest PWA
 │   ├── sw.js                   # Service worker (offline)
-│   ├── app-config.json         # Généré au démarrage depuis param.json
+│   ├── .htaccess               # Types MIME Apache (déploiement statique)
+│   ├── app-config.json         # Version + durées (livré ; régénéré par le serveur)
 │   ├── css/style.css
 │   ├── js/log.js               # Logger client (routage unique)
 │   ├── js/timer.js             # Moteur de compte à rebours (chronos)
@@ -91,6 +93,7 @@ arBATT/
 │   └── icons/                  # Icônes PWA (svg + png 192/512/maskable)
 ├── dynamic/                # Données personnalisées (git-ignoré)
 ├── logs/                   # Tous les fichiers de logs (git-ignoré)
+├── deploy/INSTALL.md       # Guide de déploiement (WordPress, statique, QR)
 ├── package.json            # Scripts npm + dépendance de dev jsdom
 ├── tests/                  # Tests headless (Node)
 │   ├── run_all.js              # Lance toutes les suites (npm test)
@@ -139,10 +142,29 @@ Vous pouvez tout surcharger par variable d'environnement, par exemple :
 ARBATT_PORT=8099 ARBATT_SERVER_HEADER="ma-salle" python3 server.py
 ```
 
-> 💡 **Servir la PWA depuis un autre serveur** : le contenu de `www/` est
-> entièrement statique. Vous pouvez aussi le déposer tel quel comme documents
-> sur n'importe quel hébergement web. Le service worker exige un contexte
-> sécurisé (HTTPS ou `localhost`).
+> 💡 Le serveur Python n'est **nécessaire qu'en développement**. Pour la mise à
+> disposition publique, voir [Déploiement](#déploiement).
+
+## Déploiement
+
+arBATT est une **PWA 100 % statique** : pour la publier, il suffit de servir le
+dossier **`www/`** en **HTTPS** par n'importe quel serveur web. Le cas le plus
+courant — **déposer le dossier dans un sous-répertoire d'un site WordPress
+existant** — ainsi que les sous-domaines, l'hébergement statique pur (GitHub
+Pages, Netlify…), les types MIME, le service worker et le QR code, sont
+détaillés pas à pas dans **[`deploy/INSTALL.md`](deploy/INSTALL.md)**.
+
+En bref :
+
+```bash
+# (optionnel) régénérer www/app-config.json depuis config/param.json
+python3 server.py   # écrit le fichier, puis Ctrl-C
+# puis téléverser le contenu de www/ dans, p.ex., https://mon-club.fr/arbatt/
+```
+
+- `www/app-config.json` est **livré avec l'appli** (lu tel quel en statique).
+- `www/.htaccess` règle les types MIME sur Apache (ignoré ailleurs).
+- HTTPS est **obligatoire** pour le service worker (installation + hors-ligne).
 
 ## Utilisation
 

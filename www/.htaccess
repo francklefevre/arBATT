@@ -1,0 +1,33 @@
+# arBATT - Table tennis club referee companion (PWA)
+#
+# Free software developed by Franck LEFEVRE for K1 ( https://k1info.com ),
+# with the help of his team of kind and playful robots.
+#
+# ---------------------------------------------------------------------------
+# Apache configuration for serving the arBATT PWA as static files (e.g. in a
+# sub-directory of an existing WordPress site). Harmless on servers that do
+# not read .htaccess (nginx ignores it). See deploy/INSTALL.md.
+# ---------------------------------------------------------------------------
+
+# Correct MIME types (so the manifest and assets install properly as a PWA).
+<IfModule mod_mime.c>
+  AddType application/manifest+json   .webmanifest
+  AddType text/javascript             .js
+  AddType image/svg+xml               .svg
+  AddType application/json            .json
+</IfModule>
+
+# The service worker and the app config must always be revalidated so a new
+# deployment is picked up promptly; other assets may be cached by the SW.
+<IfModule mod_headers.c>
+  <FilesMatch "(sw\.js|app-config\.json)$">
+    Header set Cache-Control "no-cache, max-age=0, must-revalidate"
+  </FilesMatch>
+</IfModule>
+
+# Do NOT let a parent WordPress .htaccess rewrite our static files. A real
+# directory with real files is normally served directly, but we make it
+# explicit by disabling the rewrite engine inside this folder.
+<IfModule mod_rewrite.c>
+  RewriteEngine Off
+</IfModule>

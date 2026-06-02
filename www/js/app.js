@@ -222,7 +222,7 @@
   function configureScoreboardForMode() {
     var d = mode === "doubles";
     document.getElementById("btn-service").classList.toggle("hidden", !d);
-    document.getElementById("service-info").classList.toggle("hidden", !d);
+    // The service-info line is shown in both modes; render() manages it.
     document.getElementById("btn-timeout-0").textContent = d ? "⏸️ TM Équipe A" : "⏸️ Temps mort A";
     document.getElementById("btn-timeout-1").textContent = d ? "⏸️ TM Équipe B" : "⏸️ Temps mort B";
   }
@@ -308,15 +308,23 @@
     setText("end-" + leftSide, "◀ Gauche");
     setText("end-" + (1 - leftSide), "Droite ▶");
 
-    // Announcement
-    setText("announce", v.announce);
-
-    // Doubles: explicit "server -> receiver" line.
-    if (mode === "doubles" && !v.finished) {
-      document.getElementById("service-info").innerHTML =
-        "Service : <b>" + v.names[v.server] + "</b> → " + v.names[v.receiver];
-    } else if (mode === "doubles") {
-      document.getElementById("service-info").textContent = "";
+    // Announcement = score only (server's score first); the server is stated
+    // once, on the dedicated "Service" line below (no duplication).
+    var si = document.getElementById("service-info");
+    if (v.finished) {
+      setText("announce", v.announce); // final result
+      si.textContent = "";
+      si.classList.add("hidden");
+    } else {
+      var servingSide = (mode === "doubles") ? v.servingTeam : v.server;
+      setText("announce", v.points[servingSide] + " - " + v.points[1 - servingSide]);
+      if (mode === "doubles") {
+        si.innerHTML = "Service : <b>" + v.names[v.server] + "</b> → " +
+          v.names[v.receiver];
+      } else {
+        si.innerHTML = "Service : <b>" + v.names[v.server] + "</b>";
+      }
+      si.classList.remove("hidden");
     }
 
     // Hints
