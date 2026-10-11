@@ -21,7 +21,7 @@
  * ---------------------------------------------------------------------------
  */
 
-var CACHE_VERSION = "arbatt-v0_1_15"; // 2026-10-11: bump (app.js config guard)
+var CACHE_VERSION = "arbatt-v0_1_16"; // 2026-10-11: bump (api/.htaccess MultiViews fix)
 
 var APP_SHELL = [
   "./",

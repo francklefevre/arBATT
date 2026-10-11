@@ -4,6 +4,21 @@ Free software developed by Franck LEFEVRE for K1 ( https://k1info.com ),
 with the help of his team of kind and playful robots.
 ============================================================================
 
+2026-10-11 19:55 — v0.1.16 — Production deployment on batt.club + PHP relay fix.
+  - Deployed v0.1.15 to https://batt.club/arbatt/ (OVH shared hosting,
+    ~/www/arbatt -> ~/arbatt-src/www symlink): commit 5f55fb1 pushed to
+    GitHub, `git pull --ff-only` on the server over SSH (host alias "batt").
+  - BUG FOUND in production: api/live/_info answered "400 Bad Request" while
+    api/live.php?path=_info worked. Cause: Apache MultiViews (enabled on
+    OVH) mapped api/live/... to live.php before mod_rewrite, so ?path= was
+    never set. Fix: `Options -MultiViews` in www/api/.htaccess.
+  - deploy/INSTALL.md: symptom + cause documented in the PHP relay section.
+  - Process: git is now used by the agent (rule changed in AGENTS.md).
+  - Config: version 0.1.16 (param.json + .example, package.json),
+    www/app-config.json regenerated, SW cache -> arbatt-v0_1_16.
+  Deploy impact (checked): only www/api/.htaccess changes on the server;
+    nothing else to configure (config/ found through the symlink).
+
 2026-10-11 19:00 — v0.1.15 — No silent config fallback in the PWA.
   - www/js/app.js: removed the hard-coded default durations of appConfig
     (they hid a missing/stale app-config.json behind a console WARN).

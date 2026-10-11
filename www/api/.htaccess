@@ -15,6 +15,12 @@
 # turns it back ON for itself only (per-directory rules are not inherited).
 # ---------------------------------------------------------------------------
 
+# 2026-10-11 (v0.1.16): MultiViews OFF. On OVH shared hosting content
+# negotiation is enabled: a request for api/live/_info was mapped straight to
+# live.php (with PATH_INFO=/_info) BEFORE the rewrite below ran, so live.php
+# received no ?path= and answered "400 Bad Request" (seen on batt.club).
+Options -MultiViews
+
 <IfModule mod_rewrite.c>
   RewriteEngine On
   RewriteRule ^live/(.*)$ live.php?path=$1 [QSA,L]

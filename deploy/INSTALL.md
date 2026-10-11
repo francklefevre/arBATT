@@ -192,6 +192,10 @@ relais PHP `api/live.php` (+ `api/.htaccess`) sont livrés avec `www/` : **rien
   `api/live/<…>` vers `live.php`.
 - Vérification : `https://VOTRE-SITE/arbatt/api/live/_info` doit répondre
   `{"relay":true,"tokenRequired":false}` (puis `true` une fois le jeton posé).
+- Si cette URL répond **`400 Bad Request`** alors que
+  `…/api/live.php?path=_info` fonctionne, c'est la négociation de contenu
+  (**MultiViews**, active chez OVH) qui court-circuite la réécriture.
+  `www/api/.htaccess` la désactive (`Options -MultiViews`, depuis v0.1.16).
 - Les données (un petit fichier par canal) vont par défaut dans le dossier
   temporaire du système (`/tmp/arbatt-live`), **hors du web**. Pour un autre
   dossier : `ARBATT_LIVE_PHP_DATA_DIR` (jamais sous `www/`).

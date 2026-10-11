@@ -193,7 +193,13 @@ the app with `{ gameMinutes: 0 }` so the clock is finished immediately.
   then pull on the server over SSH (access provided by the user); then
   verify with curl
   (app-config.json version, scoreboard.html 200, api/live/_info relay:true).
-  State on 2026-10-11 before deploying v0.1.15: live site still v0.1.11.
+  Server: ssh alias `batt` (battclw@ssh.cluster031.hosting.ovh.net, key
+  ~/.ssh/id_ed25519), repo ~/arbatt-src, web ~/www/arbatt -> symlink to
+  ~/arbatt-src/www, PHP 7.4, git 2.20. Deploy = `ssh batt 'cd arbatt-src &&
+  git pull --ff-only'`. Do not edit files on the server by hand: fix in the
+  repo, push, pull.
+- OVH has Apache MultiViews ON: it maps api/live/... to live.php before
+  mod_rewrite (=> 400, no ?path=). www/api/.htaccess has Options -MultiViews.
 
 ## Testing the UI headlessly (jsdom)
 
