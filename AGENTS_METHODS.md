@@ -194,6 +194,7 @@ the app with `{ gameMinutes: 0 }` so the clock is finished immediately.
   verify with curl
   (app-config.json version, scoreboard.html 200, api/live/_info relay:true).
   2026-10-11: v0.1.17 validated by the user on a phone; v0.1.18 deployed directly at the user's request.
+  From v0.1.20 the user tests ONLY on batt.club: deploy each tested change.
   Server: ssh alias `batt` (battclw@ssh.cluster031.hosting.ovh.net, key
   ~/.ssh/id_ed25519), repo ~/arbatt-src, web ~/www/arbatt -> symlink to
   ~/arbatt-src/www, PHP 7.4, git 2.20. Deploy = `ssh batt 'cd arbatt-src &&

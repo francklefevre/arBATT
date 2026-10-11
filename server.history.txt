@@ -4,6 +4,11 @@ Free software developed by Franck LEFEVRE for K1 ( https://k1info.com ),
 with the help of his team of kind and playful robots.
 ============================================================================
 
+2026-10-11 21:55 — v0.1.20 deployed on batt.club (git pull, 96241b6). Checked
+  online: app-config 0.1.20, court.html/js/css + teams.js served (200), SW
+  arbatt-v0_1_20, relay OK, no PHP error; court.html?demo=1 rendered in
+  headless Chrome from batt.club.
+
 2026-10-11 21:45 — v0.1.20 — Teams of the free matches + courtside tablet display.
   Teams (user choice: "équipes pour parties libres"):
     - NEW www/js/teams.js (pure model, events 75xx, tag TEAMS): roster
