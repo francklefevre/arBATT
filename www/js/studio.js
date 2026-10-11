@@ -36,19 +36,24 @@
   "use strict";
 
   var S = window.arbattSheet;
+  var T = window.arbattTeams;   // 2026-10-11 (v0.1.20): free-match teams
   var Live = window.arbattLive;
 
   var SHEET_KEY = "arbatt.sheet.v1";
   var LIVE_KEY = "arbatt.live.v1";
   // 2026-10-11 (v0.1.18): results of free matches (played without the sheet).
   var HISTORY_KEY = "arbatt.history.v1";
+  // 2026-10-11 (v0.1.20): teams of the free matches (see teams.js).
+  var TEAMS_KEY = "arbatt.teams.v1";
   var OVERLAY_PAGE = "scoreboard.html";
+  var COURT_PAGE = "court.html";   // 2026-10-11 (v0.1.20): tablet display
   // Two-tap confirmation window for destructive buttons (no window.confirm:
   // it blocks the UI and is unavailable in some embedded browsers).
   var CONFIRM_MS = 3000;
 
   var sheet = null;            // current match sheet (null until created)
   var history = null;          // free-match results (a sheet object, see below)
+  var roster = null;           // free-match teams (teams.js roster)
   var liveCfg = null;          // persisted broadcast settings
   var publisher = null;        // LivePublisher
   var relayInfo = null;        // result of detectRelay() (null = no relay)
@@ -91,6 +96,19 @@
 
   function loadSheet() { return loadSheetFrom(SHEET_KEY); }
 
+  function loadRoster() {
+    var obj = loadJSON(TEAMS_KEY);
+    if (!obj) { return T.createRoster(); }
+    try {
+      return T.validateRoster(obj);
+    } catch (e) {
+      arbattLog("ERROR", 9003, "Stored " + TEAMS_KEY + " is invalid, ignored: " + e.message);
+      return T.createRoster();
+    }
+  }
+
+  function saveRoster() { saveJSON(TEAMS_KEY, roster); }
+
   function saveSheet() {
     if (sheet) { saveJSON(SHEET_KEY, sheet); }
   }
@@ -127,13 +145,19 @@
         encounters: sheet.encounters.map(publicEncounter)
       };
     }
-    return {
+    var pub = {
       history: true,
       title: "Résultats",
       teams: ["", ""],
       score: [0, 0],
       encounters: history ? history.encounters.map(publicEncounter) : []
     };
+    // 2026-10-11 (v0.1.20): team standing instead of the match list.
+    if (liveCfg.display.results === "teams") {
+      pub.title = "Classement par équipe";
+      pub.standings = T.standings(roster, history ? history.encounters : []);
+    }
+    return pub;
   }
 
   /** Build and publish the full snapshot. Called by app.js after any change. */
@@ -184,6 +208,7 @@
     if (!enc) { return; } // already recorded (result screen shown again)
     saveJSON(HISTORY_KEY, history);
     renderHistoryCount();
+    renderStandings();
     arbattLog("SCORE", 9012, "Free match kept in history: " +
       opts.sides[0] + " vs " + opts.sides[1] + " " + enc.result.games.join("-"));
     // app.js publishes right after (render -> notifyLive), no notify() here.
@@ -204,6 +229,103 @@
       kind: enc.kind,
       sides: enc.sides,
       label: "n° " + (idx + 1) + " — " + S.sideLabel(enc, 0) + " vs " + S.sideLabel(enc, 1)
+    });
+  }
+
+  // ------------------------------------------------------------ teams screen
+  // 2026-10-11 (v0.1.20). The list is rebuilt only on add/remove; typing
+  // updates the model in place (no re-render: the input keeps its focus).
+
+  function renderTeams() {
+    var list = $("teams-list");
+    list.innerHTML = "";
+    $("teams-empty").classList.toggle("hidden", roster.teams.length > 0);
+    roster.teams.forEach(function (t) {
+      var li = el("li", "team-card");
+      li.dataset.id = t.id;
+      var head = el("div", "team-head");
+      var name = el("input", "team-name");
+      name.type = "text";
+      name.maxLength = 24;
+      name.value = t.name;
+      name.dataset.field = "name";
+      name.setAttribute("aria-label", "Nom de l'équipe");
+      head.appendChild(name);
+      head.appendChild(actionButton("team-del", t.id, "✕", "Supprimer l'équipe"));
+      li.appendChild(head);
+      var players = el("textarea", "team-players");
+      players.rows = 3;
+      players.value = t.players.join("\n");
+      players.dataset.field = "players";
+      players.placeholder = "Un joueur par ligne";
+      players.setAttribute("aria-label", "Joueurs de " + t.name);
+      li.appendChild(players);
+      li.appendChild(el("small", "", t.players.length + " joueur(s)"));
+      list.appendChild(li);
+    });
+    renderStandings();
+    renderKnownPlayers();
+  }
+
+  /** Team standing on the phone (same computation as the overlay). */
+  function renderStandings() {
+    var list = $("teams-standings");
+    if (!list) { return; }
+    list.innerHTML = "";
+    T.standings(roster, history ? history.encounters : []).forEach(function (r, i) {
+      var li = el("li", "ts-row");
+      li.appendChild(el("span", "ts-rank", String(i + 1)));
+      li.appendChild(el("span", "ts-name", r.name));
+      li.appendChild(el("span", "ts-rec", r.won + " V · " + r.lost + " D"));
+      list.appendChild(li);
+    });
+  }
+
+  /** Declared players suggested in the new-match name fields. */
+  function renderKnownPlayers() {
+    var dl = $("known-players");
+    dl.innerHTML = "";
+    T.allPlayers(roster).forEach(function (p) {
+      var o = document.createElement("option");
+      o.value = p;
+      dl.appendChild(o);
+    });
+  }
+
+  function teamsChanged() {
+    saveRoster();
+    renderStandings();
+    renderKnownPlayers();
+    notify();
+  }
+
+  function bindTeams() {
+    $("teams-add").addEventListener("click", function () {
+      T.addTeam(roster, "");
+      saveRoster();
+      renderTeams();
+      notify();
+    });
+    $("teams-list").addEventListener("input", function (ev) {
+      var card = ev.target.closest(".team-card");
+      var team = card && T.findTeam(roster, card.dataset.id);
+      if (!team) { return; }
+      if (ev.target.dataset.field === "name") {
+        team.name = ev.target.value.trim() || team.name;
+      } else if (ev.target.dataset.field === "players") {
+        team.players = T.parsePlayers(ev.target.value);
+        card.querySelector("small").textContent = team.players.length + " joueur(s)";
+      }
+      teamsChanged();
+    });
+    $("teams-list").addEventListener("click", function (ev) {
+      var btn = ev.target.closest("button[data-act='team-del']");
+      if (!btn) { return; }
+      confirmTap(btn, function () {
+        T.removeTeam(roster, btn.dataset.id);
+        renderTeams();
+        teamsChanged();
+      });
     });
   }
 
@@ -448,9 +570,43 @@
   }
 
   // ---------------------------------------------------------- broadcast panel
-  function overlayUrl() {
-    return new URL(OVERLAY_PAGE + "?ch=" + encodeURIComponent(liveCfg.channel),
+  /** Absolute URL of a display page on the current channel. */
+  function displayUrl(page) {
+    return new URL(page + "?ch=" + encodeURIComponent(liveCfg.channel),
       window.location.href).href;
+  }
+
+  function overlayUrl() { return displayUrl(OVERLAY_PAGE); }
+
+  /** Fill both display addresses (overlay + tablet). */
+  function renderDisplayUrls() {
+    $("live-url").value = overlayUrl();
+    $("court-url").value = displayUrl(COURT_PAGE);
+  }
+
+  /**
+   * Copy / open buttons of one display address. 2026-10-11 (v0.1.20):
+   * shared by the OBS overlay and the courtside tablet (was overlay-only).
+   */
+  function bindDisplayUrl(prefix, page, windowName) {
+    $(prefix + "-url").addEventListener("focus", function (ev) { ev.target.select(); });
+    $(prefix + "-copy").addEventListener("click", function () {
+      var url = displayUrl(page);
+      var done = function (ok) {
+        $(prefix + "-copy-state").textContent = ok ? "Adresse copiée ✓"
+          : "Copie impossible : sélectionnez l'adresse et copiez-la.";
+      };
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(url).then(function () { done(true); },
+          function () { done(false); });
+      } else {
+        $(prefix + "-url").select();
+        done(false);
+      }
+    });
+    $(prefix + "-open").addEventListener("click", function () {
+      window.open(displayUrl(page), windowName);
+    });
   }
 
   function renderLiveStatus() {
@@ -474,9 +630,13 @@
   }
 
   function openLivePanel() {
-    $("live-url").value = overlayUrl();
+    renderDisplayUrls();
+    $("court-copy-state").textContent = "";
     $("live-show-score").checked = !!liveCfg.display.scorebug;
     $("live-show-sheet").checked = !!liveCfg.display.sheet;
+    document.querySelectorAll("input[name=live-results]").forEach(function (r) {
+      r.checked = (r.value === liveCfg.display.results);
+    });
     renderHistoryCount();
     $("live-token").value = liveCfg.token || "";
     $("live-copy-state").textContent = "";
@@ -492,24 +652,8 @@
     $("live-close").addEventListener("click", function () {
       $("live").classList.add("hidden");
     });
-    $("live-url").addEventListener("focus", function (ev) { ev.target.select(); });
-    $("live-copy").addEventListener("click", function () {
-      var url = overlayUrl();
-      var done = function (ok) {
-        $("live-copy-state").textContent = ok ? "Adresse copiée ✓"
-          : "Copie impossible : sélectionnez l'adresse et copiez-la.";
-      };
-      if (navigator.clipboard && navigator.clipboard.writeText) {
-        navigator.clipboard.writeText(url).then(function () { done(true); },
-          function () { done(false); });
-      } else {
-        $("live-url").select();
-        done(false);
-      }
-    });
-    $("live-open").addEventListener("click", function () {
-      window.open(overlayUrl(), "arbatt-scoreboard");
-    });
+    bindDisplayUrl("live", OVERLAY_PAGE, "arbatt-scoreboard");
+    bindDisplayUrl("court", COURT_PAGE, "arbatt-court");
     $("live-show-score").addEventListener("change", function (ev) {
       liveCfg.display.scorebug = ev.target.checked;
       saveLiveCfg();
@@ -520,6 +664,15 @@
       saveLiveCfg();
       notify();
     });
+    // 2026-10-11 (v0.1.20): free-match results per match or per team.
+    document.querySelectorAll("input[name=live-results]").forEach(function (r) {
+      r.addEventListener("change", function (ev) {
+        liveCfg.display.results = ev.target.value;
+        saveLiveCfg();
+        arbattLog("UI", 9043, "Free-match results shown " + ev.target.value);
+        notify();
+      });
+    });
     $("live-history-clear").addEventListener("click", function (ev) {
       confirmTap(ev.currentTarget, function () {
         history = null;
@@ -527,6 +680,7 @@
           arbattLog("ERROR", 9001, "Cannot clear " + HISTORY_KEY + ": " + e);
         }
         renderHistoryCount();
+        renderStandings();
         arbattLog("UI", 9042, "Free-match history cleared");
         notify();
       });
@@ -542,7 +696,7 @@
         liveCfg.channel = S.uuid();
         saveLiveCfg();
         createPublisher();
-        $("live-url").value = overlayUrl();
+        renderDisplayUrls();
         arbattLog("LIVE", 9041, "New broadcast channel " + liveCfg.channel);
         notify();
       });
@@ -553,14 +707,19 @@
   document.addEventListener("DOMContentLoaded", function () {
     sheet = loadSheet();
     history = loadSheetFrom(HISTORY_KEY);
+    roster = loadRoster();
     liveCfg = loadJSON(LIVE_KEY) || {};
     if (!liveCfg.channel) { liveCfg.channel = S.uuid(); }
     liveCfg.display = liveCfg.display || { scorebug: true, sheet: false };
     liveCfg.token = liveCfg.token || "";
+    // 2026-10-11 (v0.1.20): "matches" | "teams" (free-match results panel).
+    if (liveCfg.display.results !== "teams") { liveCfg.display.results = "matches"; }
     saveLiveCfg();
 
     bindSheet();
     bindLivePanel();
+    bindTeams();
+    renderTeams();
     createPublisher();
     ready = true;
     arbattLog("BOOT", 9050, "Studio ready (channel " + liveCfg.channel +
@@ -580,6 +739,7 @@
     onMatchFinished: onMatchFinished,
     onFreeMatchFinished: onFreeMatchFinished,
     getHistory: function () { return history; },
+    getRoster: function () { return roster; },
     // Exposed for tests / debugging from the console.
     getSheet: function () { return sheet; },
     getChannel: function () { return liveCfg && liveCfg.channel; },

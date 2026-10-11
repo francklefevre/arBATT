@@ -206,6 +206,18 @@ the app with `{ gameMinutes: 0 }` so the clock is finished immediately.
   Python urllib reader printing the arrival time of each "id:" line while
   POSTing to the channel in the background.
 
+## Teams + courtside tablet (v0.1.20)
+
+- Free-match teams: www/js/teams.js (pure), stored arbatt.teams.v1; team of a
+  side resolved at DISPLAY time from the current roster. Overlay standing via
+  the sheet panel (`standings` in the published sheet object).
+- Tablet page court.html/court.js: same channel as the overlay; shared
+  display helpers live in live.js (subscribe, pointFlag, receiveTimer,
+  timerSecondsLeft, formatSeconds, startDemo).
+- Visual check without a tablet: `google-chrome --headless=new
+  --window-size=800,1280 --virtual-time-budget=12000 --screenshot=x.png
+  "http://localhost:8080/court.html?demo=1"` (use a fresh --user-data-dir).
+
 ## Testing the UI headlessly (jsdom)
 
 `tests/test_ui_dom.js` loads the real `www/index.html` in jsdom and drives it.

@@ -254,6 +254,46 @@ async function run() {
   ok(!O3.visible('bug-team'), 'no team score chip for free matches');
   ok(JSON.parse(app3.window.localStorage.getItem('arbatt.history.v1')).encounters.length === 1,
     'history persisted in localStorage');
+  // ---- teams of the free matches (v0.1.20): Gil (BATT 1) beat Hugo (Caen).
+  H3.click(H3.doc.querySelector("#screen-menu [data-target='screen-teams']"));
+  ok(H3.visible('screen-teams'), 'teams screen opens from the menu');
+  H3.click(H3.$('teams-add'));
+  H3.click(H3.$('teams-add'));
+  const cards = H3.doc.querySelectorAll('#teams-list .team-card');
+  ok(cards.length === 2, 'two teams added');
+  const typeIn = function (elm, v) {
+    elm.value = v;
+    elm.dispatchEvent(new app3.window.Event('input', { bubbles: true }));
+  };
+  typeIn(cards[0].querySelector('.team-name'), 'BATT 1');
+  typeIn(cards[0].querySelector('.team-players'), 'gil\nInes');
+  typeIn(cards[1].querySelector('.team-name'), 'Caen');
+  typeIn(cards[1].querySelector('.team-players'), 'Hugo');
+  ok(H3.doc.querySelectorAll('#known-players option').length === 3,
+    'declared players suggested in the new-match form');
+  ok(/BATT 1/.test(H3.doc.querySelector('#teams-standings .ts-row').textContent) &&
+     /1 V · 0 D/.test(H3.doc.querySelector('#teams-standings .ts-row').textContent),
+    'standing on the phone (name matching is case-insensitive)');
+  ok(JSON.parse(app3.window.localStorage.getItem('arbatt.teams.v1')).teams.length === 2,
+    'teams persisted in localStorage');
+  H3.click(H3.doc.querySelector('#screen-teams .open-live'));
+  const teamsRadio = H3.doc.querySelector("input[name=live-results][value='teams']");
+  teamsRadio.checked = true;
+  teamsRadio.dispatchEvent(new app3.window.Event('change', { bubbles: true }));
+  await wait(20);
+  const trows = O3.doc.querySelectorAll('#sp-list .sp-team-row');
+  ok(trows.length === 2 && /Classement/.test(O3.$('sp-title').textContent),
+    'overlay switches to the team standing');
+  ok(/BATT 1/.test(trows[0].textContent) && trows[0].querySelector('.sp-res').textContent === '1 V · 0 D' &&
+     trows[1].querySelector('.sp-res').textContent === '0 V · 1 D', 'standing rows and records');
+  const matchesRadio = H3.doc.querySelector("input[name=live-results][value='matches']");
+  matchesRadio.checked = true;
+  matchesRadio.dispatchEvent(new app3.window.Event('change', { bubbles: true }));
+  await wait(20);
+  ok(O3.doc.querySelectorAll('#sp-list .sp-team-row').length === 0 &&
+     O3.doc.querySelectorAll('#sp-list .sp-row').length === 1, 'back to the per-match list');
+  H3.click(H3.$('live-close'));
+
   H3.click(H3.doc.querySelector('#screen-score .open-live') ||
     H3.doc.querySelector('.open-live'));
   H3.click(H3.$('live-history-clear'));

@@ -51,6 +51,11 @@
           <span class="menu-icon">🗒️</span>
           <span class="menu-label">Feuille de match</span>
         </button>
+        <!-- 2026-10-11 (v0.1.20): teams of the free matches. -->
+        <button class="menu-item" data-action="goto" data-target="screen-teams">
+          <span class="menu-icon">👥</span>
+          <span class="menu-label">Équipes <em>(parties libres)</em></span>
+        </button>
         <button class="menu-item open-live">
           <span class="menu-icon">📺</span>
           <span class="menu-label">Diffusion / OBS</span>
@@ -87,10 +92,10 @@
         <!-- Singles names -->
         <div id="names-singles">
           <label>Joueur A
-            <input type="text" id="nameA" value="Joueur A" maxlength="24" />
+            <input type="text" id="nameA" list="known-players" value="Joueur A" maxlength="24" />
           </label>
           <label>Joueur B
-            <input type="text" id="nameB" value="Joueur B" maxlength="24" />
+            <input type="text" id="nameB" list="known-players" value="Joueur B" maxlength="24" />
           </label>
         </div>
 
@@ -99,19 +104,19 @@
           <fieldset>
             <legend>Équipe A</legend>
             <label>Joueur A1
-              <input type="text" id="name0" value="Joueur A1" maxlength="20" />
+              <input type="text" id="name0" list="known-players" value="Joueur A1" maxlength="20" />
             </label>
             <label>Joueur A2
-              <input type="text" id="name1" value="Joueur A2" maxlength="20" />
+              <input type="text" id="name1" list="known-players" value="Joueur A2" maxlength="20" />
             </label>
           </fieldset>
           <fieldset>
             <legend>Équipe B</legend>
             <label>Joueur B1
-              <input type="text" id="name2" value="Joueur B1" maxlength="20" />
+              <input type="text" id="name2" list="known-players" value="Joueur B1" maxlength="20" />
             </label>
             <label>Joueur B2
-              <input type="text" id="name3" value="Joueur B2" maxlength="20" />
+              <input type="text" id="name3" list="known-players" value="Joueur B2" maxlength="20" />
             </label>
           </fieldset>
         </div>
@@ -253,6 +258,29 @@
          referee them one by one (▶) and follow the team score. Results are
          recorded automatically at the end of each match. Built by studio.js;
          stored on this device (localStorage) and exportable as JSON. -->
+    <!-- ============================== TEAMS ============================== -->
+    <!-- 2026-10-11 (v0.1.20): teams of the FREE matches (Nouvelle partie,
+         without the match sheet). A player belongs to the team listing their
+         name; the OBS "Résultats" panel can then rank the teams. -->
+    <section class="screen hidden" id="screen-teams">
+      <h2>Équipes</h2>
+      <p class="teams-intro">Pour les <b>parties libres</b> : déclarez les équipes
+        et leurs joueurs. L'écran de diffusion peut alors afficher un
+        <b>classement par équipe</b> (📺 Diffusion → « Résultats : par équipe »).
+        Un double compte pour une équipe si ses deux joueurs en font partie.</p>
+      <ol class="teams-list" id="teams-list"></ol>
+      <p class="sheet-empty" id="teams-empty">Aucune équipe pour l'instant.</p>
+      <button type="button" class="btn-secondary full" id="teams-add">➕ Ajouter une équipe</button>
+
+      <h3 class="teams-sub">Classement</h3>
+      <ol class="teams-standings" id="teams-standings"></ol>
+
+      <div class="actions">
+        <button class="btn-secondary open-live">📺 Diffusion</button>
+        <button class="btn-secondary" data-action="goto" data-target="screen-menu">Retour</button>
+      </div>
+    </section>
+
     <section class="screen hidden" id="screen-sheet">
       <h2>Feuille de match</h2>
       <div class="form">
@@ -613,12 +641,27 @@
           <button class="btn-secondary" id="live-open">↗ Ouvrir</button>
         </div>
         <p class="timer-state" id="live-copy-state"></p>
+        <!-- 2026-10-11 (v0.1.20): courtside tablet display (court.html). -->
+        <p class="dchooser-label">Écran bord de table
+          <small>(tablette : score courant en grand)</small></p>
+        <input type="text" id="court-url" class="live-url" readonly />
+        <div class="timer-controls">
+          <button class="btn-secondary" id="court-copy">📋 Copier</button>
+          <button class="btn-secondary" id="court-open">↗ Ouvrir</button>
+        </div>
+        <p class="timer-state" id="court-copy-state"></p>
         <p class="live-status" id="live-status"></p>
         <label class="check"><input type="checkbox" id="live-show-score" checked />
           Afficher le score à l'écran</label>
         <label class="check"><input type="checkbox" id="live-show-sheet" />
           Afficher la feuille de match à l'écran
           (sans feuille : les résultats des parties libres)</label>
+        <!-- 2026-10-11 (v0.1.20): free-match results per match or per team. -->
+        <div class="seg live-results">
+          <span>Résultats :</span>
+          <label><input type="radio" name="live-results" value="matches" checked /> par partie</label>
+          <label><input type="radio" name="live-results" value="teams" /> par équipe</label>
+        </div>
         <!-- 2026-10-11 (v0.1.18): free-match history (two-tap confirmation). -->
         <button class="btn-secondary" id="live-history-clear"></button>
         <label class="hidden" id="live-token-row">Jeton du relais
@@ -637,11 +680,16 @@
     <small>Logiciel libre — K1 ( k1info.com ) &amp; ses robots gentils. Restez SPORT !</small>
   </footer>
 
+  <!-- 2026-10-11 (v0.1.20): player names declared in the teams (suggested
+       in the new-match form), filled by studio.js. -->
+  <datalist id="known-players"></datalist>
+
   <script src="js/log.js"></script>
   <script src="js/timer.js"></script>
   <script src="js/scorer.js"></script>
   <script src="js/doubles.js"></script>
   <script src="js/sheet.js"></script>
+  <script src="js/teams.js"></script>
   <script src="js/live.js"></script>
   <script src="js/studio.js"></script>
   <script src="js/app.js"></script>

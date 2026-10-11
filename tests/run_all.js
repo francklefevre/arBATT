@@ -31,7 +31,11 @@ const SUITES = [
   // 2026-10-07 (v0.1.14): single app-config builder + versioned file in sync.
   'test_app_config.py',
   // 2026-10-11 (v0.1.15): no silent config fallback in app.js.
-  'test_config_error_dom.js'
+  'test_config_error_dom.js',
+  // 2026-10-11 (v0.1.20): teams of the free matches.
+  'test_teams.js',
+  // 2026-10-11 (v0.1.20): courtside tablet display.
+  'test_court_dom.js'
 ];
 
 let failed = 0;

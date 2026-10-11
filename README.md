@@ -88,6 +88,12 @@ qui applique les règles du *Manuel pratique d'arbitre de club* de la FFTT
   feuille (« Nouvelle partie ») est gardée dans un historique (les
   `ARBATT_HISTORY_MAX` dernières), affiché sur l'écran OBS pendant les
   parties suivantes.
+- 👥 **Équipes des parties libres** (*v0.1.20*) : déclarez des équipes et
+  leurs joueurs ; l'écran OBS affiche au choix les résultats **par partie** ou
+  un **classement par équipe** (victoires / défaites cumulées).
+- 📱 **Écran bord de table** (*v0.1.20*) : une tablette posée près de l'aire
+  de jeu affiche le **score courant en très grand** (noms, points, manches,
+  service, balle de manche/match, chrono), sans animation.
 - 🦇 Aux couleurs du club : logo **BATT-Man** (Bayard Argentan Tennis de Table).
 - 📋 **Déroulé de la partie** : les étapes d'une partie dans l'ordre, chacune
   avec un encadré « À ce stade je ne dois pas oublier ».
@@ -123,6 +129,7 @@ arBATT/
 │   ├── js/doubles.js           # Moteur de comptage DOUBLE (machine à états)
 │   ├── js/app.js               # Contrôleur d'interface (2 modes)
 │   ├── js/sheet.js             # Modèle de la feuille de match (pur)
+│   ├── js/teams.js             # Équipes des parties libres + classement (pur)
 │   ├── js/live.js              # Lien temps réel arbitre ↔ affichage public
 │   ├── js/studio.js            # Régie : écran feuille de match + panneau Diffusion
 │   ├── scoreboard.html         # ★ Affichage public / overlay OBS
@@ -130,6 +137,9 @@ arBATT/
 │   ├── api/.htaccess           # Réécriture Apache api/live/… -> live.php
 │   ├── css/scoreboard.css      # Habillage de l'overlay (1920×1080, transparent)
 │   ├── js/scoreboard.js        # Rendu + animations de l'overlay
+│   ├── court.html              # ★ Écran bord de table (tablette)
+│   ├── css/court.css           # Habillage de la tablette (grands chiffres)
+│   ├── js/court.js             # Rendu de la tablette
 │   └── icons/                  # Icônes PWA (svg + png 192/512/maskable)
 ├── dynamic/                # Données personnalisées (git-ignoré)
 ├── logs/                   # Tous les fichiers de logs (git-ignoré)
@@ -153,6 +163,8 @@ arBATT/
 │   ├── php_live_router.php     # Routeur de test pour `php -S` (simule .htaccess)
 │   ├── test_app_config.py      # Générateur de app-config.json + fichier livré à jour
 │   ├── test_config_error_dom.js # app-config.json absent/invalide : erreur visible, actions bloquées
+│   ├── test_teams.js           # Équipes des parties libres + classement
+│   ├── test_court_dom.js       # Bout en bout arbitre ↔ tablette bord de table
 │   └── check_offline_chrome.py # Vérif. manuelle : PWA hors-ligne dans un vrai Chrome
 └── doc/manuel AC.pdf       # Manuel officiel de référence
 ```
@@ -350,6 +362,21 @@ permanence — sans souci pour quelques sources OBS, à surveiller au-delà.
   terminée pour l'instant », *v0.1.19*) : la case a toujours un effet visible.
   Bouton « 🗑 Effacer les résultats des parties libres (N) » du panneau
   *Diffusion* (deux appuis pour confirmer).
+- **Classement par équipe** (*v0.1.20*) : panneau *Diffusion* → « Résultats :
+  ○ par partie ○ par équipe ». En mode équipe, le panneau devient
+  « Classement par équipe » : rang, équipe, `V · D`. Les équipes se déclarent
+  dans le menu **👥 Équipes** (un joueur par ligne ; les noms déclarés sont
+  proposés dans le formulaire de nouvelle partie). Règles :
+  - un joueur appartient à la première équipe qui cite son nom (comparaison
+    sans tenir compte des majuscules, accents ni espaces superflus) ;
+  - en double, un côté compte pour une équipe seulement si ses **deux**
+    joueurs en font partie ;
+  - chaque côté rattaché à une équipe lui compte une partie gagnée ou perdue
+    (une partie entre deux joueurs de la même équipe compte donc 1 V et 1 D ;
+    un joueur sans équipe n'est pas compté) ;
+  - classement : plus de victoires, puis moins de défaites, puis nom ;
+  - l'équipe est déterminée **à l'affichage** : modifier les équipes
+    réattribue aussi les parties déjà jouées.
 
 Le panneau **📺 Diffusion** (menu, tableau de marque, feuille de match) permet de
 copier/ouvrir l'adresse, de choisir ce qui est affiché (score / feuille), de
@@ -368,6 +395,33 @@ saisir le **jeton** si le relais est protégé et de changer de canal.
 
 Hors OBS, la page affiche un message d'aide (« en attente de l'arbitre » /
 « connecté ») ; **dans OBS ce message n'apparaît jamais**.
+
+### Écran bord de table (tablette) — `court.html` (*v0.1.20*)
+
+Pour les joueurs et le public autour de l'aire de jeu : le **score courant en
+très grand**, lisible à plusieurs mètres. Panneau **📺 Diffusion** →
+« Écran bord de table » → **Copier** l'adresse et l'ouvrir sur la tablette
+(même canal que l'overlay OBS ; les deux peuvent fonctionner en même temps).
+
+- Affiche : noms, **points**, manches gagnées, point de service, « balle de
+  manche / de match », contexte (manche, décisive, accélération, rencontre
+  n/N), **chrono** (temps mort, repos, adaptation) quand il tourne, puis le
+  **vainqueur** et le détail des manches en fin de partie.
+- Paysage : deux moitiés côte à côte ; portrait : l'une au-dessus de l'autre.
+- Gauche/droite = côtés de la table vus par l'arbitre ; bouton **⇄** (ou
+  `?flip=1`) pour inverser si la tablette fait face à l'arbitre (choix
+  mémorisé sur la tablette, clé `arbatt.court.flip`).
+- Un appui sur l'écran passe en **plein écran** et demande au navigateur de
+  **garder l'écran allumé** (Wake Lock, si le navigateur le permet).
+- La case « Afficher le score à l'écran » ne concerne que l'overlay OBS : la
+  tablette affiche toujours la partie en cours.
+
+| Paramètre | Défaut | Rôle |
+|-----------|--------|------|
+| `ch` | *(obligatoire)* | Canal (fourni par le panneau *Diffusion*). |
+| `flip` | mémorisé, sinon `0` | `flip=1` : inverse gauche et droite. |
+| `relay` | `1` | `relay=0` : n'écoute que le BroadcastChannel (même navigateur). |
+| `demo` | — | `demo=1` : partie fictive animée pour vérifier la tablette. |
 
 ### Feuille de match
 
@@ -392,7 +446,11 @@ La feuille et les réglages de diffusion sont conservés **sur l'appareil**
 (stockage du navigateur, clés `arbatt.sheet.v1` et `arbatt.live.v1`) : pensez
 à **exporter** la feuille pour la garder. L'historique des parties libres est
 sous la clé `arbatt.history.v1` (même format qu'une feuille ; chaque entrée a en
-plus `matchId` et `playedAt`).
+plus `matchId` et `playedAt`). Les équipes des parties libres sont sous
+`arbatt.teams.v1` :
+`{"format":"arbatt-teams","v":1,"teams":[{"id":"<uuid>","name":"BATT 1","players":["Alice","Bruno"]}]}`.
+Le mode d'affichage des résultats est `display.results` (`"matches"` ou
+`"teams"`) dans `arbatt.live.v1`.
 
 ## Règles de comptage implémentées
 
@@ -571,7 +629,8 @@ priorité est : `param.json` → `secret.json` → variable d'environnement.
   `timer` = `{label, totalMs, remainingMs, running, finished}` ou `null` ;
   `sheet` = feuille avec libellés et score d'équipe pré-calculés — ou, sans
   feuille, l'historique des parties libres (`history: true`, titre
-  « Résultats »). `pub` (UUID
+  « Résultats » ; en mode équipe, `standings: [{id, name, played, won,
+  lost}]` et titre « Classement par équipe »). `pub` (UUID
   par chargement de l'appli) + `seq` permettent à l'overlay d'ignorer les
   doublons (même instantané reçu par les deux transports).
 - **API du relais** (`server.py`) :
@@ -612,7 +671,8 @@ unique**. Chaque ligne est préfixée par :
   (convention : `1xxx` serveur, `2xxx` app PWA, `3xxx` moteur de comptage,
   `4xxx` chronos, `5xxx` double, `6xxx` hub du relais (`arbatt_live.py`),
   `66xx` relais PHP (`www/api/live.php`),
-  `7xxx` feuille de match, `80xx` lien live, `85xx` overlay, `9xxx` régie).
+  `7xxx` feuille de match, `75xx` équipes des parties libres (tag `TEAMS`),
+  `80xx` lien live, `85xx` overlay, `87xx` tablette bord de table, `9xxx` régie).
 - Tous les fichiers de logs sont dans `logs/`. Les erreurs sont en plus
   recopiées dans `<programme>.err.txt`.
 
@@ -624,7 +684,7 @@ Côté PWA, le logger est accessible depuis la console du navigateur
 Toute la suite de tests (Node.js) :
 
 ```bash
-npm test                      # lance les 12 suites et affiche un résumé
+npm test                      # lance les 14 suites et affiche un résumé
 # ou individuellement :
 node tests/test_scorer.js        # simple
 node tests/test_timer.js         # chronomètres (horloge simulée)
@@ -638,6 +698,8 @@ node tests/test_live_dom.js      # bout en bout arbitre ↔ overlay (jsdom)
 python3 tests/test_live_relay.py # relais HTTP/SSE : Python puis PHP (php -S)
 python3 tests/test_app_config.py # générateur de app-config.json (+ fichier livré à jour)
 node tests/test_config_error_dom.js # app-config.json absent/invalide -> erreur visible
+node tests/test_teams.js         # équipes des parties libres + classement
+node tests/test_court_dom.js     # bout en bout arbitre ↔ tablette bord de table
 ```
 
 Vérification **hors-ligne** dans un **vrai Chrome** (manuelle, hors `npm test`

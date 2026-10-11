@@ -234,6 +234,53 @@
     if (this.es) { this.es.close(); this.es = null; }
   };
 
+  /**
+   * Open the subscription of a display page (overlay, courtside tablet):
+   * detect the HTTP relay unless wantRelay is false, then subscribe.
+   * 2026-10-11 (v0.1.20): factorised out of scoreboard.js for court.js.
+   * Returns a Promise of the LiveSubscriber.
+   */
+  function subscribe(channel, wantRelay, onState) {
+    return (wantRelay ? detectRelay("") : Promise.resolve(null)).then(function (info) {
+      return new LiveSubscriber({ channel: channel, relay: !!info, onState: onState });
+    });
+  }
+
+  // ------------------------------------------------- display-side helpers
+  // 2026-10-11 (v0.1.20): shared by scoreboard.js and court.js (were local to
+  // scoreboard.js).
+
+  /** "game" / "match" when `side` is one point from winning, else "". */
+  function pointFlag(m, side) {
+    if (m.finished || !m.pointsPerGame) { return ""; }
+    var me = m.points[side], other = m.points[1 - side];
+    if (me < m.pointsPerGame - 1 || me <= other) { return ""; }
+    var gamesToWin = (m.bestOf + 1) / 2;
+    return m.games[side] === gamesToWin - 1 ? "match" : "game";
+  }
+
+  /** Countdown of a snapshot + local receipt time (no clock skew). */
+  function receiveTimer(timer) {
+    return timer ? {
+      label: timer.label,
+      remainingMs: timer.remainingMs,
+      running: timer.running,
+      at: Date.now()
+    } : null;
+  }
+
+  /** Whole seconds left on a received countdown (see receiveTimer). */
+  function timerSecondsLeft(ts) {
+    var ms = ts.remainingMs - (ts.running ? Date.now() - ts.at : 0);
+    return Math.max(0, Math.ceil(ms / 1000));
+  }
+
+  /** "m:ss" */
+  function formatSeconds(secs) {
+    var mm = Math.floor(secs / 60), ss = secs % 60;
+    return mm + ":" + (ss < 10 ? "0" : "") + ss;
+  }
+
   // -------------------------------------------------------- match snapshot
   /**
    * Match part of a live snapshot, built from a scoring-engine view
@@ -280,12 +327,59 @@
     };
   }
 
+  // -------------------------------------------------------------- demo mode
+  /**
+   * Fake singles match driven by the real scoring engine (needs scorer.js),
+   * pushed to onState every 1.5 s: positioning aid for the display pages.
+   * 2026-10-11 (v0.1.20): moved from scoreboard.js (shared with court.js).
+   */
+  function startDemo(onState, showSheet) {
+    var m = new global.arbattScorer.TTScorer({
+      playerNames: ["Alice Martin", "Bruno Lefort"], gamesToWin: 3
+    });
+    var id = "demo";
+    var seq = 0;
+    var sheet = {
+      title: "Démo arBATT", teams: ["BATT", "Visiteurs"], score: [2, 1],
+      encounters: [
+        { id: "e1", num: 1, kind: "singles", sides: ["Claire", "Denis"], result: { winner: 0, games: [3, 1] } },
+        { id: "e2", num: 2, kind: "singles", sides: ["Emma", "Fabien"], result: { winner: 1, games: [2, 3] } },
+        { id: "e3", num: 3, kind: "doubles", sides: ["Claire / Emma", "Denis / Fabien"], result: { winner: 0, games: [3, 0] } },
+        { id: id, num: 4, kind: "singles", sides: ["Alice Martin", "Bruno Lefort"], result: null }
+      ]
+    };
+    function push() {
+      onState({
+        protocol: PROTOCOL, pub: "demo", seq: ++seq,
+        display: { scorebug: true, sheet: !!showSheet },
+        timer: null, sheet: sheet,
+        match: matchSnapshot(m.view(), {
+          mode: "singles", matchId: "demo", pointsPerGame: 11,
+          accelReturns: 13, encounterId: id
+        })
+      });
+    }
+    push();
+    return setInterval(function () {
+      if (m.view().finished) { return; }
+      if (Math.random() < 0.03) { m.sanction(Math.random() < 0.5 ? 0 : 1); }
+      else { m.pointTo(Math.random() < 0.55 ? 0 : 1); }
+      push();
+    }, 1500);
+  }
+
   var api = {
     PROTOCOL: PROTOCOL,
     matchSnapshot: matchSnapshot,
     detectRelay: detectRelay,
     LivePublisher: LivePublisher,
-    LiveSubscriber: LiveSubscriber
+    LiveSubscriber: LiveSubscriber,
+    subscribe: subscribe,
+    pointFlag: pointFlag,
+    receiveTimer: receiveTimer,
+    timerSecondsLeft: timerSecondsLeft,
+    formatSeconds: formatSeconds,
+    startDemo: startDemo
   };
   global.arbattLive = api;
   if (typeof module !== "undefined" && module.exports) {

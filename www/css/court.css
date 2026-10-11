@@ -1,0 +1,201 @@
+/*
+ * arBATT - Table tennis club referee companion (PWA)
+ *
+ * Free software: you may do whatever you want with it.
+ * Developed by Franck LEFEVRE for K1 ( https://k1info.com ),
+ * with the help of his team of kind and playful robots.
+ *
+ * Please use the enormous power of this software to do good things
+ * for things and people, always making sure it harms nothing and no one.
+ *
+ * ---------------------------------------------------------------------------
+ * Courtside tablet display stylesheet (court.html).
+ *
+ * 2026-10-11 (v0.1.20): created. Sizes are in viewport units so the score
+ * fills any tablet: two halves side by side in landscape, stacked in
+ * portrait. High contrast, no animation, no external font (works offline).
+ * ---------------------------------------------------------------------------
+ */
+
+:root {
+  --bg: #06121a;
+  --side: #0d2230;
+  --side-serve: #10374a;
+  --green: #12a374;
+  --accent: #f4b740;
+  --text: #ffffff;
+  --muted: #9bb6c6;
+  --red: #e0413b;
+  --font: "Barlow Condensed", "Roboto Condensed", "Arial Narrow",
+          "Helvetica Neue", system-ui, sans-serif;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  height: 100%;
+  overflow: hidden;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font);
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+body {
+  display: flex;
+  flex-direction: column;
+  padding: env(safe-area-inset-top) env(safe-area-inset-right)
+           env(safe-area-inset-bottom) env(safe-area-inset-left);
+}
+
+.hidden { display: none !important; }
+
+/* ---- context line + countdown ---- */
+.ct-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 2vw;
+  padding: 1.5vh 3vw;
+  font-size: max(4vh, 18px);
+  color: var(--muted);
+  min-height: 7vh;
+}
+.ct-timer {
+  padding: .1em .6em;
+  border-radius: .4em;
+  background: var(--accent);
+  color: #10151a;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  font-size: max(6vh, 24px);
+}
+.ct-timer.warn { background: var(--red); color: var(--text); }
+
+/* ---- the two halves ---- */
+.ct-main {
+  flex: 1;
+  display: flex;
+  gap: 2vw;
+  padding: 0 2vw 2vh;
+  min-height: 0;
+}
+/* Side 1 on the left when the snapshot / flip says so. */
+.ct-main.swapped { flex-direction: row-reverse; }
+
+.ct-side {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  min-width: 0;
+  min-height: 0;     /* 2026-10-11: let the stacked portrait halves shrink */
+  overflow: hidden;
+  padding: 2vh 1vw;
+  border-radius: 2vh;
+  background: var(--side);
+  border: .6vh solid transparent;
+}
+.ct-side.serving { background: var(--side-serve); border-color: var(--accent); }
+.ct-side.winner { border-color: var(--green); }
+
+.ct-name {
+  display: flex;
+  align-items: center;
+  gap: .4em;
+  max-width: 100%;
+  font-size: max(7vh, 24px);
+  font-weight: 700;
+}
+.ct-name span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* Serve indicator: a ball before the name of the serving side. */
+.ct-serve {
+  flex: none;
+  width: .6em; height: .6em;
+  border-radius: 50%;
+  background: var(--accent);
+  visibility: hidden;
+}
+.ct-side.serving .ct-serve { visibility: visible; }
+
+.ct-points {
+  font-size: min(42vh, 30vw);
+  line-height: 1;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.ct-foot {
+  display: flex;
+  align-items: baseline;
+  gap: .5em;
+  font-size: max(5vh, 20px);
+  color: var(--muted);
+}
+.ct-games {
+  font-size: 1.8em;
+  font-weight: 800;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+.ct-flag { color: var(--accent); font-weight: 700; text-transform: uppercase; }
+
+/* ---- finished match ---- */
+.ct-over {
+  position: fixed;
+  left: 50%; bottom: 4vh;
+  transform: translateX(-50%);
+  padding: 2vh 4vw;
+  border-radius: 2vh;
+  background: rgba(6, 18, 26, .94);
+  border: .5vh solid var(--green);
+  text-align: center;
+}
+.ct-over-kicker { color: var(--muted); font-size: max(4vh, 16px); text-transform: uppercase; }
+.ct-over-name { font-size: max(9vh, 28px); font-weight: 800; color: var(--green); }
+.ct-over-games { font-size: max(4.5vh, 18px); font-variant-numeric: tabular-nums; }
+
+/* ---- waiting message ---- */
+.ct-wait {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6vw;
+  text-align: center;
+  font-size: max(5vh, 20px);
+  color: var(--muted);
+}
+
+/* ---- tools ---- */
+.ct-tools {
+  position: fixed;
+  right: 1.5vw; bottom: 1.5vh;
+  display: flex;
+  gap: 1vw;
+  opacity: .5;
+}
+.ct-tools button {
+  min-width: 48px; min-height: 48px;
+  border: 0; border-radius: 12px;
+  background: var(--side);
+  color: var(--text);
+  font-size: 24px;
+}
+:fullscreen #ct-fs { display: none; }
+
+/* ---- portrait tablet: sides stacked ---- */
+@media (orientation: portrait) {
+  .ct-main { flex-direction: column; }
+  .ct-main.swapped { flex-direction: column-reverse; }
+  /* 2026-10-11: each half is ~43vh tall: name + points + games must fit
+     (first version overflowed: the 2nd side's games were cut off). */
+  .ct-side { padding: 1vh 2vw; }
+  .ct-points { font-size: min(24vh, 50vw); }
+  .ct-name { font-size: max(3.6vh, 20px); }
+  .ct-foot { font-size: max(3vh, 16px); }
+}

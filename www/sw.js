@@ -21,7 +21,7 @@
  * ---------------------------------------------------------------------------
  */
 
-var CACHE_VERSION = "arbatt-v0_1_19"; // 2026-10-11: bump (sheet panel empty state)
+var CACHE_VERSION = "arbatt-v0_1_20"; // 2026-10-11: bump (teams + courtside tablet)
 
 var APP_SHELL = [
   "./",
@@ -36,12 +36,17 @@ var APP_SHELL = [
   "./js/scorer.js",
   "./js/doubles.js",
   "./js/sheet.js",
+  "./js/teams.js",
   "./js/live.js",
   "./js/studio.js",
   "./js/app.js",
   "./js/scoreboard.js",
   "./scoreboard.html",
   "./css/scoreboard.css",
+  // 2026-10-11 (v0.1.20): courtside tablet display.
+  "./court.html",
+  "./js/court.js",
+  "./css/court.css",
   "./icons/icon.svg",
   "./icons/BATT_Man_2026.svg",
   "./icons/icon-192.png",

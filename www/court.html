@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<!--
+  arBATT - Table tennis club referee companion (PWA)
+
+  Free software: you may do whatever you want with it.
+  Developed by Franck LEFEVRE for K1 ( https://k1info.com ),
+  with the help of his team of kind and playful robots.
+
+  Please use the enormous power of this software to do good things
+  for things and people, always making sure it harms nothing and no one.
+
+  ===========================================================================
+  Courtside display — "écran bord de table" (tablet).
+
+  2026-10-11 (v0.1.20): created. A tablet placed next to the playing area
+  shows ONLY the current score, very large, readable from several metres:
+  names, points, games won, serve indicator, game/match point, and the
+  countdown (time-out, rest, warm-up) while it runs. No animation, no banner.
+  It is fed by the same live channel as the OBS overlay (js/live.js) and
+  never accepts score input. Tapping the screen goes full screen; the screen
+  is kept awake (Wake Lock) where the browser allows it.
+
+  URL parameters (all optional except ch):
+    ch=<channel>   channel id shown in the referee app's "Diffusion" panel
+    flip=1         swap left/right (tablet facing the umpire); the ⇄ button
+                   does the same and is remembered on the tablet
+    relay=0        do not open the network relay stream (same-browser only)
+    demo=1         animated fake match, to check the tablet
+  ===========================================================================
+-->
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#06121a" />
+  <title>arBATT — bord de table</title>
+  <link rel="icon" href="icons/BATT_Man_2026.svg" type="image/svg+xml" />
+  <link rel="stylesheet" href="css/court.css" />
+</head>
+<body>
+  <!-- Context line: game number, deciding game, acceleration, encounter. -->
+  <header class="ct-head">
+    <span class="ct-ctx" id="ct-ctx"></span>
+    <span class="ct-timer hidden" id="ct-timer"></span>
+  </header>
+
+  <!-- Two halves, ordered left/right by court.js (table side + ?flip). -->
+  <main class="ct-main" id="ct-main">
+    <section class="ct-side" id="ct-side-0">
+      <div class="ct-name"><i class="ct-serve" aria-label="au service"></i><span></span></div>
+      <div class="ct-points">0</div>
+      <div class="ct-foot">
+        <span class="ct-games-label">Manches</span>
+        <span class="ct-games">0</span>
+        <span class="ct-flag"></span>
+      </div>
+    </section>
+    <section class="ct-side" id="ct-side-1">
+      <div class="ct-name"><i class="ct-serve" aria-label="au service"></i><span></span></div>
+      <div class="ct-points">0</div>
+      <div class="ct-foot">
+        <span class="ct-games-label">Manches</span>
+        <span class="ct-games">0</span>
+        <span class="ct-flag"></span>
+      </div>
+    </section>
+  </main>
+
+  <!-- Finished match: winner + game scores. -->
+  <div class="ct-over hidden" id="ct-over">
+    <div class="ct-over-kicker">Vainqueur</div>
+    <div class="ct-over-name" id="ct-over-name"></div>
+    <div class="ct-over-games" id="ct-over-games"></div>
+  </div>
+
+  <!-- Waiting / connection messages. -->
+  <div class="ct-wait" id="ct-wait"></div>
+
+  <!-- Discreet tools (hidden in full screen except the swap). -->
+  <div class="ct-tools">
+    <button type="button" id="ct-flip" title="Inverser gauche / droite">⇄</button>
+    <button type="button" id="ct-fs" title="Plein écran">⛶</button>
+  </div>
+
+  <script src="js/log.js"></script>
+  <script src="js/scorer.js"></script>
+  <script src="js/sheet.js"></script>
+  <script src="js/live.js"></script>
+  <script src="js/court.js"></script>
+</body>
+</html>

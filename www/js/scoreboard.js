@@ -86,14 +86,8 @@
     return m.mode === "doubles" ? [2 * side, 2 * side + 1] : [side];
   }
 
-  /** "game" / "match" when `side` is one point from winning, else "". */
-  function pointFlag(m, side) {
-    if (m.finished || !m.pointsPerGame) { return ""; }
-    var me = m.points[side], other = m.points[1 - side];
-    if (me < m.pointsPerGame - 1 || me <= other) { return ""; }
-    var gamesToWin = (m.bestOf + 1) / 2;
-    return m.games[side] === gamesToWin - 1 ? "match" : "game";
-  }
+  // 2026-10-11 (v0.1.20): pointFlag() moved to live.js (shared with court.js).
+  var pointFlag = Live.pointFlag;
 
   /** Restart a CSS animation class on an element. */
   function replay(el, cls) {
@@ -196,12 +190,7 @@
 
   // --------------------------------------------------------- countdown pill
   function receiveTimer(st) {
-    timerSnap = st.timer ? {
-      label: st.timer.label,
-      remainingMs: st.timer.remainingMs,
-      running: st.timer.running,
-      at: Date.now()
-    } : null;
+    timerSnap = Live.receiveTimer(st.timer); // 2026-10-11: shared helper
     tickTimer();
   }
 
@@ -211,13 +200,12 @@
     var show = !!(timerSnap && prev && prev.display && prev.display.scorebug && prev.match);
     pill.classList.toggle("hidden", !show);
     if (show) {
-      var ms = timerSnap.remainingMs - (timerSnap.running ? Date.now() - timerSnap.at : 0);
-      var secs = Math.max(0, Math.ceil(ms / 1000));
-      var mm = Math.floor(secs / 60), ss = secs % 60;
+      // 2026-10-11 (v0.1.20): shared countdown helpers of live.js.
+      var secs = Live.timerSecondsLeft(timerSnap);
       pill.innerHTML = "";
       pill.appendChild(document.createTextNode("⏱ " + timerSnap.label));
       var b = document.createElement("b");
-      b.textContent = mm + ":" + (ss < 10 ? "0" : "") + ss;
+      b.textContent = Live.formatSeconds(secs);
       pill.appendChild(b);
       pill.classList.toggle("warn", secs <= TIMER_WARN_S);
     }
@@ -242,6 +230,11 @@
     var liveId = st.match && !st.match.finished ? st.match.encounterId : null;
     var list = $("sp-list");
     list.innerHTML = "";
+    // 2026-10-11 (v0.1.20): team standing of the free matches.
+    if (sh.standings) {
+      renderStandings(list, sh.standings);
+      return;
+    }
     // 2026-10-11 (v0.1.19): explicit empty state (an empty panel looked like
     // "nothing happens" when the referee ticked the sheet display).
     if (!sh.encounters.length) {
@@ -266,6 +259,32 @@
           : (e.id === liveId ? st.match.games.join("-") : "")]
       ];
       cells.forEach(function (c) {
+        var span = document.createElement("span");
+        span.className = c[0];
+        span.textContent = c[1];
+        li.appendChild(span);
+      });
+      list.appendChild(li);
+    });
+  }
+
+  /**
+   * Team standing rows: rank, team, "W V · L D". 2026-10-11 (v0.1.20).
+   * Same .sp-row grid as the encounters (name spans the 3 middle columns).
+   */
+  function renderStandings(list, rows) {
+    if (!rows.length) {
+      var empty = document.createElement("li");
+      empty.className = "sp-empty";
+      empty.textContent = "Aucune équipe déclarée (menu 👥 Équipes de l’arbitre)";
+      list.appendChild(empty);
+      return;
+    }
+    rows.forEach(function (r, i) {
+      var li = document.createElement("li");
+      li.className = "sp-row sp-team-row";
+      [["sp-n", String(i + 1)], ["sp-a" + (i === 0 && r.won > 0 ? " win" : ""), r.name],
+       ["sp-res", r.won + " V · " + r.lost + " D"]].forEach(function (c) {
         var span = document.createElement("span");
         span.className = c[0];
         span.textContent = c[1];
@@ -460,44 +479,6 @@
     w.classList.remove("hidden");
   }
 
-  // -------------------------------------------------------------- demo mode
-  /** Fake singles match driven by the real scoring engine (positioning aid). */
-  function startDemo() {
-    var m = new window.arbattScorer.TTScorer({
-      playerNames: ["Alice Martin", "Bruno Lefort"], gamesToWin: 3
-    });
-    var id = "demo";
-    var seq = 0;
-    var sheet = {
-      title: "Démo arBATT", teams: ["BATT", "Visiteurs"], score: [2, 1],
-      encounters: [
-        { id: "e1", num: 1, kind: "singles", sides: ["Claire", "Denis"], result: { winner: 0, games: [3, 1] } },
-        { id: "e2", num: 2, kind: "singles", sides: ["Emma", "Fabien"], result: { winner: 1, games: [2, 3] } },
-        { id: "e3", num: 3, kind: "doubles", sides: ["Claire / Emma", "Denis / Fabien"], result: { winner: 0, games: [3, 0] } },
-        { id: id, num: 4, kind: "singles", sides: ["Alice Martin", "Bruno Lefort"], result: null }
-      ]
-    };
-    function push() {
-      onState({
-        protocol: Live.PROTOCOL, pub: "demo", seq: ++seq,
-        display: { scorebug: true, sheet: params.get("demo") === "sheet" },
-        timer: null, sheet: sheet,
-        match: Live.matchSnapshot(m.view(), {
-          mode: "singles", matchId: "demo", pointsPerGame: 11,
-          accelReturns: 13, encounterId: id
-        })
-      });
-    }
-    push();
-    setInterval(function () {
-      if (m.view().finished) { return; }
-      if (Math.random() < 0.03) { m.sanction(Math.random() < 0.5 ? 0 : 1); }
-      else { m.pointTo(Math.random() < 0.55 ? 0 : 1); }
-      push();
-    }, 1500);
-    arbattLog("BOOT", 8520, "Demo mode");
-  }
-
   // -------------------------------------------------------------- bootstrap
   document.addEventListener("DOMContentLoaded", function () {
     applyParams();
@@ -505,7 +486,13 @@
     window.addEventListener("resize", fitStage);
     setInterval(tickTimer, 250);
 
-    if (params.get("demo")) { startDemo(); return; }
+    // 2026-10-11 (v0.1.20): demo generator moved to live.js (shared with
+    // the courtside tablet page).
+    if (params.get("demo")) {
+      Live.startDemo(onState, params.get("demo") === "sheet");
+      arbattLog("BOOT", 8520, "Demo mode");
+      return;
+    }
 
     if (!channel) {
       arbattLog("ERROR", 8501, "Missing ?ch= parameter: nothing to display");
@@ -516,14 +503,8 @@
     showWaiting("arBATT — en attente de l'arbitre…<small>canal " +
       channel.slice(0, 8) + "… (ce message n'apparaît pas dans OBS)</small>");
 
-    var wantRelay = params.get("relay") !== "0";
-    (wantRelay ? Live.detectRelay("") : Promise.resolve(null)).then(function (info) {
-      new Live.LiveSubscriber({
-        channel: channel,
-        relay: !!info,
-        onState: onState
-      });
-    });
+    // 2026-10-11 (v0.1.20): shared with court.js (Live.subscribe).
+    Live.subscribe(channel, params.get("relay") !== "0", onState);
     arbattLog("BOOT", 8502, "Scoreboard overlay on channel " + channel +
       (inObs ? " (inside OBS)" : ""));
   });

@@ -4,6 +4,40 @@ Free software developed by Franck LEFEVRE for K1 ( https://k1info.com ),
 with the help of his team of kind and playful robots.
 ============================================================================
 
+2026-10-11 21:45 — v0.1.20 — Teams of the free matches + courtside tablet display.
+  Teams (user choice: "équipes pour parties libres"):
+    - NEW www/js/teams.js (pure model, events 75xx, tag TEAMS): roster
+      {format "arbatt-teams", v 1, teams[{id uuid, name, players[]}]},
+      case/accent/space-insensitive name matching, doubles side = team only
+      if both players belong to it, standings (won desc, lost asc, name).
+    - NEW menu "👥 Équipes" + screen-teams (add / rename / players textarea /
+      two-tap delete, standing preview); declared players suggested in the
+      new-match name fields (<datalist id="known-players">).
+    - Broadcast panel: "Résultats : par partie / par équipe"
+      (liveCfg.display.results). studio.js publishes `standings` (title
+      "Classement par équipe"); scoreboard.js renderStandings() + .sp-team-row.
+    - Storage: arbatt.teams.v1. Events 9003 (bad stored roster), 9043.
+  Courtside tablet (user choice: "score complet"):
+    - NEW www/court.html + js/court.js (events 87xx) + css/court.css: names,
+      huge points, games, serve, game/match point, context, countdown, winner;
+      landscape halves / portrait stacked (portrait first version overflowed:
+      sizes reduced, min-height:0); ⇄ swap (?flip=1, arbatt.court.flip),
+      tap = full screen + Screen Wake Lock.
+    - Broadcast panel: "Écran bord de table" address with copy/open.
+  Factorisation:
+    - live.js: subscribe(), pointFlag(), receiveTimer(), timerSecondsLeft(),
+      formatSeconds(), startDemo() moved/shared (were local to scoreboard.js).
+    - studio.js: displayUrl(page) + bindDisplayUrl() for overlay AND tablet
+      (copy/open logic was overlay-only).
+  Tests: NEW tests/test_teams.js, tests/test_court_dom.js (+loadCourt in the
+    harness); test_live_dom.js +9 (teams screen -> standing on the overlay).
+    npm test 14/14 PASS. Visual check in headless Chrome (1280x800, 800x1280).
+  Config: version 0.1.20, SW arbatt-v0_1_20 (+ teams.js, court.html/js/css
+    in the pre-cache). README (features, tree, overlay, tablet section +
+    URL params, storage, formats, tests, event numbers), INSTALL.md.
+  Deploy impact (checked): new static files under www/ only; git pull on the
+    server is enough; no PHP / Apache change.
+
 2026-10-11 21:25 — v0.1.19 — "Afficher la feuille de match" always visible.
   - Reported: ticking the box made "no difference". Relay snapshot of the
     user's channel: v0.1.18, display.sheet=true, sheet=null (no sheet AND no

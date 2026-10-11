@@ -320,6 +320,10 @@ html, body {
 .sp-res { text-align: center; font-weight: 800; font-variant-numeric: tabular-nums; }
 .sp-row.live .sp-res { color: var(--accent); }
 .sp-row.doubles .sp-a, .sp-row.doubles .sp-b { font-size: 21px; }
+/* 2026-10-11 (v0.1.20): team standing row (rank | team | record). */
+.sp-row.sp-team-row { grid-template-columns: 48px 1fr 200px; }
+.sp-row.sp-team-row .sp-a { text-align: left; }
+.sp-row.sp-team-row .sp-res { text-align: right; }
 
 /* ======================================================= WAITING HINT */
 .waiting {

@@ -27,7 +27,7 @@ toucher à WordPress lui-même.
 2. **Téléverser** tout le contenu de `www/` dans un dossier `arbatt/` à la
    racine web du site (via FTP/SFTP ou le gestionnaire de fichiers de
    l'hébergeur). Le dossier doit contenir `index.html`, `manifest.webmanifest`,
-   `sw.js`, `app-config.json`, `.htaccess`, `scoreboard.html`, `css/`, `js/`,
+   `sw.js`, `app-config.json`, `.htaccess`, `scoreboard.html`, `court.html`, `css/`, `js/`,
    `icons/`, `media/` et `api/` (avec son `.htaccess` : fichier caché, pensez à
    afficher les fichiers cachés dans votre client FTP).
 3. **Ouvrir** `https://mon-club.fr/arbatt/` : l'appli s'affiche. Sur mobile, le

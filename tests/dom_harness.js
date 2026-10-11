@@ -128,4 +128,9 @@ function loadOverlay(query, opts) {
   return loadPage('scoreboard.html', query, null, opts);
 }
 
-module.exports = { loadApp, loadOverlay, version: PARAM.version, DEFAULT_CONFIG };
+// 2026-10-11 (v0.1.20): courtside tablet display (court.html).
+function loadCourt(query, opts) {
+  return loadPage('court.html', query, null, opts);
+}
+
+module.exports = { loadApp, loadOverlay, loadCourt, version: PARAM.version, DEFAULT_CONFIG };
