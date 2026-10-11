@@ -4,6 +4,11 @@ Free software developed by Franck LEFEVRE for K1 ( https://k1info.com ),
 with the help of his team of kind and playful robots.
 ============================================================================
 
+2026-10-11 20:45 — v0.1.18 deployed on batt.club (git pull, commit 5847eb6),
+  at the user's request without local validation. Checked online:
+  app-config 0.1.18 (historyMax 10), studio.js carries arbatt.history.v1,
+  SW arbatt-v0_1_18, relay _info OK, live_php.err.txt empty.
+
 2026-10-11 20:35 — v0.1.18 — Free-match results kept and shown on the OBS overlay.
   - Reported from batt.club: "on the 2nd match I cannot see the result of the
     1st". Diagnosis from the live relay snapshot of the user's channel: the
