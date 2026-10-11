@@ -4,6 +4,19 @@ Free software developed by Franck LEFEVRE for K1 ( https://k1info.com ),
 with the help of his team of kind and playful robots.
 ============================================================================
 
+2026-10-11 21:25 — v0.1.19 — "Afficher la feuille de match" always visible.
+  - Reported: ticking the box made "no difference". Relay snapshot of the
+    user's channel: v0.1.18, display.sheet=true, sheet=null (no sheet AND no
+    free match finished since the update) -> nothing was published.
+  - studio.js publicSheet(): the free-match history is published even when
+    empty. scoreboard.js renderSheet(): explicit empty state ("Aucune partie
+    terminée pour l'instant" / "Aucune rencontre sur la feuille"), .sp-empty
+    in scoreboard.css.
+  - Tests: test_live_dom.js updated (empty panel shown; cleared history ->
+    no rows). npm test 12/12 PASS. README updated.
+  - Version 0.1.19, app-config regenerated, SW arbatt-v0_1_19.
+  Deploy impact (checked): www/ only; git pull on batt.club.
+
 2026-10-11 20:45 — v0.1.18 deployed on batt.club (git pull, commit 5847eb6),
   at the user's request without local validation. Checked online:
   app-config 0.1.18 (historyMax 10), studio.js carries arbatt.history.v1,

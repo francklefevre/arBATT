@@ -242,6 +242,15 @@
     var liveId = st.match && !st.match.finished ? st.match.encounterId : null;
     var list = $("sp-list");
     list.innerHTML = "";
+    // 2026-10-11 (v0.1.19): explicit empty state (an empty panel looked like
+    // "nothing happens" when the referee ticked the sheet display).
+    if (!sh.encounters.length) {
+      var empty = document.createElement("li");
+      empty.className = "sp-empty";
+      empty.textContent = sh.history ? "Aucune partie terminée pour l’instant"
+        : "Aucune rencontre sur la feuille";
+      list.appendChild(empty);
+    }
     sh.encounters.forEach(function (e) {
       var li = document.createElement("li");
       // Doubles rows use a smaller font (4 names) instead of a "(double)"

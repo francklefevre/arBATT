@@ -346,6 +346,8 @@ permanence — sans souci pour quelques sources OBS, à surveiller au-delà.
 - **Résultats des parties libres** (*v0.1.18*) : sans feuille de match (ou
   avec une feuille vide), la même case affiche le panneau « Résultats » : les
   parties libres terminées, avec leur score en manches (sans score d'équipe).
+  Tant qu'aucune partie n'est terminée, le panneau l'indique (« Aucune partie
+  terminée pour l'instant », *v0.1.19*) : la case a toujours un effet visible.
   Bouton « 🗑 Effacer les résultats des parties libres (N) » du panneau
   *Diffusion* (deux appuis pour confirmer).
 

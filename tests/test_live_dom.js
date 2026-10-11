@@ -229,7 +229,10 @@ async function run() {
     for (let i = 0; i < 11; i++) { H3.click(H3.$('card-0')); }
     await wait(20);
   };
-  ok(!O3.visible('sheet-panel'), 'no sheet and no history: nothing to show');
+  // 2026-10-11 (v0.1.19): the ticked box must always show something.
+  await wait(20); // let the overlay receive the snapshot of the checkbox
+  ok(O3.visible('sheet-panel') && /Aucune partie/.test(O3.$('sp-list').textContent),
+    'no sheet and no history yet: empty "Résultats" panel with a message');
   await playFree('Gil', 'Hugo');
   ok(app3.window.arbattStudio.getHistory().encounters.length === 1,
     'free match result kept in the history');
@@ -256,8 +259,9 @@ async function run() {
   H3.click(H3.$('live-history-clear'));
   H3.click(H3.$('live-history-clear'));
   await wait(20);
-  ok(app3.window.arbattStudio.getHistory() === null && !O3.visible('sheet-panel'),
-    'history cleared (two taps) and removed from the overlay');
+  ok(app3.window.arbattStudio.getHistory() === null &&
+     O3.doc.querySelectorAll('#sp-list .sp-row').length === 0,
+    'history cleared (two taps) and emptied on the overlay');
 
   console.log(fails === 0 ? 'ALL LIVE TESTS PASSED' : fails + ' LIVE TEST(S) FAILED');
   process.exit(fails === 0 ? 0 : 1);

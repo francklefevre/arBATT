@@ -302,6 +302,14 @@ html, body {
   font-size: 28px;
   border-left: 6px solid transparent;
 }
+/* 2026-10-11 (v0.1.19): empty sheet / history placeholder. */
+.sp-empty {
+  list-style: none;
+  padding: 18px 12px;
+  color: var(--muted);
+  font-style: italic;
+  text-align: center;
+}
 .sp-row:nth-child(odd) { background: rgba(255, 255, 255, .03); }
 .sp-row.live { border-left-color: var(--accent); background: rgba(244, 183, 64, .12); }
 .sp-n { color: var(--muted); font-variant-numeric: tabular-nums; }

@@ -21,7 +21,7 @@
  * ---------------------------------------------------------------------------
  */
 
-var CACHE_VERSION = "arbatt-v0_1_18"; // 2026-10-11: bump (free-match history)
+var CACHE_VERSION = "arbatt-v0_1_19"; // 2026-10-11: bump (sheet panel empty state)
 
 var APP_SHELL = [
   "./",

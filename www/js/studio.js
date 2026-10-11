@@ -114,6 +114,9 @@
    * Sheet panel content of the overlay. 2026-10-11 (v0.1.18): the match sheet
    * when it has encounters, otherwise the free-match history (flag
    * `history: true`: the overlay then shows "Résultats" without team score).
+   * 2026-10-11 (v0.1.19): the history is published even when EMPTY, so that
+   * ticking "Afficher la feuille de match" always shows something (reported:
+   * "no visible difference" with no sheet and no finished free match yet).
    */
   function publicSheet() {
     if (sheet && sheet.encounters.length) {
@@ -124,16 +127,13 @@
         encounters: sheet.encounters.map(publicEncounter)
       };
     }
-    if (history && history.encounters.length) {
-      return {
-        history: true,
-        title: "Résultats",
-        teams: ["", ""],
-        score: [0, 0],
-        encounters: history.encounters.map(publicEncounter)
-      };
-    }
-    return null;
+    return {
+      history: true,
+      title: "Résultats",
+      teams: ["", ""],
+      score: [0, 0],
+      encounters: history ? history.encounters.map(publicEncounter) : []
+    };
   }
 
   /** Build and publish the full snapshot. Called by app.js after any change. */
