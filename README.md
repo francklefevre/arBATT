@@ -496,6 +496,7 @@ priorité est : `param.json` → `secret.json` → variable d'environnement.
 | `ARBATT_LIVE_PHP_DATA_DIR` | string | *(vide)*     | Relais PHP : dossier des instantanés (un fichier par canal). Vide = `<dossier temporaire du système>/arbatt-live`. Relatif = par rapport à la racine du dépôt. **Ne pas** le placer dans `www/`. |
 | `ARBATT_LIVE_PHP_STREAM_SECONDS` | int | `25`     | Relais PHP : durée max. d'une réponse SSE avant reconnexion automatique (rester sous la limite d'exécution de l'hébergeur). |
 | `ARBATT_LIVE_PHP_POLL_MS` | int    | `250`         | Relais PHP : intervalle de lecture du fichier du canal pendant un flux SSE (ms). |
+| `ARBATT_LIVE_PHP_PAD_BYTES` | int  | `4096`        | Relais PHP : taille du commentaire SSE de remplissage envoyé après chaque événement. Indispensable chez OVH mutualisé, qui retient la sortie PHP jusqu'à ~4 Ko (sinon l'overlay ne se met à jour qu'en fin de flux, toutes les 25 s). `0` = désactivé. |
 | `ARBATT_LIVE_PHP_TIMEZONE` | string | `Europe/Paris` | Relais PHP : fuseau des horodatages de `live_php.log` (PHP est en UTC par défaut). |
 | `ARBATT_LOG_DIR`         | string  | `logs`        | Répertoire de tous les fichiers de logs. |
 | `ARBATT_LOG_TO_CONSOLE`  | bool    | `true`        | Écho des logs activés sur la console. |

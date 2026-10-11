@@ -21,7 +21,7 @@
  * ---------------------------------------------------------------------------
  */
 
-var CACHE_VERSION = "arbatt-v0_1_16"; // 2026-10-11: bump (api/.htaccess MultiViews fix)
+var CACHE_VERSION = "arbatt-v0_1_17"; // 2026-10-11: bump (PHP relay SSE padding)
 
 var APP_SHELL = [
   "./",

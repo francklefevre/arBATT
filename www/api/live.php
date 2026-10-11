@@ -43,7 +43,8 @@
  *   ARBATT_LIVE_RELAY, ARBATT_LIVE_MAX_BYTES, ARBATT_LIVE_MAX_CHANNELS,
  *   ARBATT_LIVE_KEEPALIVE_SECONDS, ARBATT_LIVE_TOKEN (secret),
  *   ARBATT_LIVE_PHP_DATA_DIR, ARBATT_LIVE_PHP_STREAM_SECONDS,
- *   ARBATT_LIVE_PHP_POLL_MS, ARBATT_LIVE_PHP_TIMEZONE, ARBATT_LOG_DIR,
+ *   ARBATT_LIVE_PHP_POLL_MS, ARBATT_LIVE_PHP_PAD_BYTES,
+ *   ARBATT_LIVE_PHP_TIMEZONE, ARBATT_LOG_DIR,
  *   ARBATT_LOG_TAGS.
  *
  * Compatible with PHP >= 7.4. Event number convention in this file: 66xx.
@@ -70,6 +71,8 @@ function arbatt_defaults(): array
         'ARBATT_LIVE_PHP_DATA_DIR' => '',
         'ARBATT_LIVE_PHP_STREAM_SECONDS' => 25,
         'ARBATT_LIVE_PHP_POLL_MS' => 250,
+        // 2026-10-11 (v0.1.17): SSE comment padding sent after every flush.
+        'ARBATT_LIVE_PHP_PAD_BYTES' => 4096,
         // PHP defaults to UTC while server.py logs in local time: align the
         // log stamps on the club's time zone.
         'ARBATT_LIVE_PHP_TIMEZONE' => 'Europe/Paris',
@@ -326,12 +329,29 @@ function arbatt_send_json(int $status, $obj): void
     arbatt_send($status, json_encode($obj), 'application/json; charset=utf-8');
 }
 
+/**
+ * SSE comment line of $bytes spaces (ignored by EventSource).
+ *
+ * 2026-10-11 (v0.1.17): measured on batt.club (OVH shared hosting) — the
+ * hosting layer holds PHP output until about 4 KB have accumulated, whatever
+ * flush() / X-Accel-Buffering / HTTP version: a small event published at 5 s
+ * reached the overlay only at the end of the 25 s stream. Appending this
+ * padding after EVERY event pushes it through immediately. 0 disables it
+ * (hosts without such buffering). Single helper for the initial and the
+ * per-event padding.
+ */
+function arbatt_sse_pad(int $bytes): string
+{
+    return $bytes > 0 ? ':' . str_repeat(' ', $bytes) . "\n\n" : '';
+}
+
 /** Serve one bounded SSE response (see the header comment). */
 function arbatt_stream(LiveStore $store, string $ch, array $cfg, LiveLog $log): void
 {
     $duration = max(1, (int)$cfg['ARBATT_LIVE_PHP_STREAM_SECONDS']);
     $pollUs = max(50, (int)$cfg['ARBATT_LIVE_PHP_POLL_MS']) * 1000;
     $keepalive = max(1, (int)$cfg['ARBATT_LIVE_KEEPALIVE_SECONDS']);
+    $pad = arbatt_sse_pad(max(0, (int)$cfg['ARBATT_LIVE_PHP_PAD_BYTES']));
 
     @set_time_limit($duration + 15);
     ignore_user_abort(false);
@@ -346,9 +366,10 @@ function arbatt_stream(LiveStore $store, string $ch, array $cfg, LiveLog $log): 
     header('Cache-Control: no-cache');
     header('X-Accel-Buffering: no');
 
-    // 2 KB comment: pushes the first bytes through proxies that buffer small
-    // responses; "retry" = reconnection delay of EventSource (ms).
-    echo ':' . str_repeat(' ', 2048) . "\n\nretry: 1000\n\n";
+    // "retry" = reconnection delay of EventSource (ms); the padding pushes
+    // the headers through buffering proxies (was a fixed 2 KB comment, too
+    // small for OVH — see arbatt_sse_pad()).
+    echo "retry: 1000\n\n" . $pad;
     flush();
 
     $last = isset($_SERVER['HTTP_LAST_EVENT_ID']) ? (int)$_SERVER['HTTP_LAST_EVENT_ID'] : 0;
@@ -361,7 +382,7 @@ function arbatt_stream(LiveStore $store, string $ch, array $cfg, LiveLog $log): 
         // "!=" like the Python hub: a re-created channel restarts at 1.
         if ($doc !== null && $doc[0] !== $last) {
             $last = $doc[0];
-            echo 'id: ' . $last . "\ndata: " . $doc[1] . "\n\n";
+            echo 'id: ' . $last . "\ndata: " . $doc[1] . "\n\n" . $pad;
             flush();
         } elseif (microtime(true) >= $nextPing) {
             echo ": keepalive\n\n";

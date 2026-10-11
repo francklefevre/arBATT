@@ -196,6 +196,10 @@ relais PHP `api/live.php` (+ `api/.htaccess`) sont livrés avec `www/` : **rien
   `…/api/live.php?path=_info` fonctionne, c'est la négociation de contenu
   (**MultiViews**, active chez OVH) qui court-circuite la réécriture.
   `www/api/.htaccess` la désactive (`Options -MultiViews`, depuis v0.1.16).
+- Si l'overlay ne se met à jour que **par paquets toutes les ~25 s**,
+  l'hébergeur retient la sortie PHP tant qu'elle est petite (OVH : ~4 Ko).
+  Chaque événement est suivi d'un remplissage de `ARBATT_LIVE_PHP_PAD_BYTES`
+  octets (4096 par défaut, v0.1.17) ; augmentez-le si besoin.
 - Les données (un petit fichier par canal) vont par défaut dans le dossier
   temporaire du système (`/tmp/arbatt-live`), **hors du web**. Pour un autre
   dossier : `ARBATT_LIVE_PHP_DATA_DIR` (jamais sous `www/`).

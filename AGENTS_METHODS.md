@@ -200,6 +200,10 @@ the app with `{ gameMinutes: 0 }` so the clock is finished immediately.
   repo, push, pull.
 - OVH has Apache MultiViews ON: it maps api/live/... to live.php before
   mod_rewrite (=> 400, no ?path=). www/api/.htaccess has Options -MultiViews.
+- OVH also buffers PHP output until ~4 KB: SSE events need padding
+  (ARBATT_LIVE_PHP_PAD_BYTES=4096, arbatt_sse_pad()). Measure with a
+  Python urllib reader printing the arrival time of each "id:" line while
+  POSTing to the channel in the background.
 
 ## Testing the UI headlessly (jsdom)
 

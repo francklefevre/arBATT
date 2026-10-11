@@ -4,6 +4,19 @@ Free software developed by Franck LEFEVRE for K1 ( https://k1info.com ),
 with the help of his team of kind and playful robots.
 ============================================================================
 
+2026-10-11 20:15 — v0.1.17 — PHP relay: SSE events delivered immediately on OVH.
+  - Measured on batt.club: the hosting layer holds PHP output until ~4 KB
+    have accumulated (2.1 KB held, 4 KB passed at once; same in HTTP/1.1
+    and HTTP/2), so a small event published at 5 s reached the overlay only
+    when the 25 s stream ended. flush()/X-Accel-Buffering were not enough.
+  - www/api/live.php: NEW arbatt_sse_pad() — SSE comment padding appended
+    after the initial "retry:" AND after every event (replaces the fixed
+    2 KB initial comment). Size = NEW parameter ARBATT_LIVE_PHP_PAD_BYTES
+    (default 4096, 0 = off) in param.json + .example, README, INSTALL.md.
+  - Config: version 0.1.17, app-config.json regenerated, SW arbatt-v0_1_17.
+  - Tests: npm test 12/12 PASS (local php -S relay test unaffected).
+  Deploy impact (checked): pulled on the server; no Apache change needed.
+
 2026-10-11 19:55 — v0.1.16 — Production deployment on batt.club + PHP relay fix.
   - Deployed v0.1.15 to https://batt.club/arbatt/ (OVH shared hosting,
     ~/www/arbatt -> ~/arbatt-src/www symlink): commit 5f55fb1 pushed to
