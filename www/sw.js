@@ -13,25 +13,35 @@
  *
  * Strategy:
  *   - App shell assets are pre-cached on install (cache-first afterwards).
- *   - version.json is always fetched network-first so a freshly deployed
+ *   - app-config.json is always fetched network-first so a freshly deployed
  *     version number is reflected as soon as the device is online.
+ *   - /api/ (live relay of the scoreboard mode) is never intercepted.
  *
  * Bump CACHE_VERSION whenever shipped assets change to invalidate old caches.
  * ---------------------------------------------------------------------------
  */
 
-var CACHE_VERSION = "arbatt-v0_1_11";
+var CACHE_VERSION = "arbatt-v0_1_15"; // 2026-10-11: bump (app.js config guard)
 
 var APP_SHELL = [
   "./",
   "./index.html",
   "./manifest.webmanifest",
+  // 2026-10-07 (v0.1.14): pre-cached so even the very first OFFLINE launch
+  // has the version and durations (it is still fetched network-first).
+  "./app-config.json",
   "./css/style.css",
   "./js/log.js",
   "./js/timer.js",
   "./js/scorer.js",
   "./js/doubles.js",
+  "./js/sheet.js",
+  "./js/live.js",
+  "./js/studio.js",
   "./js/app.js",
+  "./js/scoreboard.js",
+  "./scoreboard.html",
+  "./css/scoreboard.css",
   "./icons/icon.svg",
   "./icons/BATT_Man_2026.svg",
   "./icons/icon-192.png",
@@ -63,6 +73,11 @@ self.addEventListener("fetch", function (event) {
 
   var url = new URL(req.url);
 
+  // 2026-10-06 (v0.1.12): the live relay (scoreboard/OBS mode) is real-time
+  // data, including a never-ending SSE stream: it must NEVER be served from
+  // or stored in the cache, so the service worker stays out of the way.
+  if (url.pathname.indexOf("/api/") >= 0) { return; }
+
   // app-config.json: network-first, fall back to cache when offline.
   if (url.pathname.endsWith("/app-config.json")) {
     event.respondWith(
@@ -76,11 +91,19 @@ self.addEventListener("fetch", function (event) {
   }
 
   // Everything else: cache-first, then network (and cache the result).
+  // 2026-10-07 (v0.1.14): lookups IGNORE the query string. The overlay is
+  // opened as scoreboard.html?ch=<uuid> (or ?demo=1) while the pre-cached
+  // entry is scoreboard.html: an exact match failed and, offline, the page
+  // did not open (found by tests/check_offline_chrome.py). For the same
+  // reason, responses to URLs WITH a query are not stored (one copy per
+  // channel would pile up in the cache).
   event.respondWith(
-    caches.match(req).then(function (cached) {
+    caches.match(req, { ignoreSearch: true }).then(function (cached) {
       return cached || fetch(req).then(function (resp) {
-        var copy = resp.clone();
-        caches.open(CACHE_VERSION).then(function (c) { c.put(req, copy); });
+        if (!url.search) {
+          var copy = resp.clone();
+          caches.open(CACHE_VERSION).then(function (c) { c.put(req, copy); });
+        }
         return resp;
       });
     })

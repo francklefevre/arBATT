@@ -13,6 +13,12 @@
  * scoring engines (scorer.js for singles, doubles.js for doubles) to the
  * shared scoreboard DOM.
  *
+ * 2026-10-06 (v0.1.12): scoreboard/OBS mode. app.js now exposes
+ * `window.arbattApp` (liveState / prefillFromEncounter / hasMatch) and calls
+ * `notifyLive()` after every visible change, so studio.js (match sheet +
+ * broadcast panel) can publish a full snapshot to the public overlay
+ * (scoreboard.html) while the referee keeps scoring on this screen.
+ *
  * Event number convention in this file: 2xxx.
  * ---------------------------------------------------------------------------
  */
@@ -30,15 +36,24 @@
   var match = null;          // current scoring engine (TTScorer | DoublesScorer)
   var mode = "singles";      // "singles" | "doubles"
   var lastGameIndex = 0;     // to detect game transitions (doubles designation)
-  var appConfig = {          // client config, refreshed from app-config.json
-    version: "?",
-    warmupSeconds: 120,
-    timeoutSeconds: 60,
-    restSeconds: 60,
-    accelReturns: 13,
-    gameMinutes: 10,
-    accelPointsThreshold: 18
+  // 2026-10-11 (v0.1.15): no more hard-coded default values here. They were a
+  // silent fallback: with app-config.json missing or stale, the app still
+  // started with its own (possibly outdated) durations and only a console
+  // WARN, hiding the error. Now app-config.json (generated from
+  // config/param.json) is the ONLY source; this table only states which keys
+  // are expected and their type. A missing/invalid config is shown on screen
+  // and blocks match / timer start (see requireAppConfig()).
+  var APP_CONFIG_TYPES = {   // expected key -> typeof (no value!)
+    version: "string",
+    warmupSeconds: "number",
+    timeoutSeconds: "number",
+    restSeconds: "number",
+    accelReturns: "number",
+    gameMinutes: "number",
+    accelPointsThreshold: "number"
   };
+  var appConfig = {};        // filled by loadAppConfig() only
+  var appConfigOk = false;   // true once every expected key is valid
 
   // Doubles: after the between-games rest closes, prompt for the service.
   var pendingChooserAfterRest = false;
@@ -55,6 +70,20 @@
   var gameClockTick = null;
   var gameClockGameIndex = -1;    // game the current clock belongs to
   var gameClockResumeAfterModal = false;
+
+  // 2026-10-06 (v0.1.12): link between the match and the match sheet.
+  // pendingEncounterId: encounter chosen on the sheet, pre-filled in the form.
+  // linkedEncounterId : encounter of the match being scored (result target).
+  var pendingEncounterId = null;
+  var linkedEncounterId = null;
+  // UUID of the current match: lets the overlay tell a NEW match (intro
+  // banner, no "point scored" animation) from a change in the same match.
+  var matchId = null;
+
+  /** Ask studio.js to publish a fresh snapshot to the overlay (if loaded). */
+  function notifyLive() {
+    if (window.arbattStudio) { window.arbattStudio.notify(); }
+  }
 
   // -------------------------------------------------------------- navigation
   function show(screenId) {
@@ -74,6 +103,8 @@
       pendingChooserAfterRest = false;
       gameClockResumeAfterModal = false;
     }
+    // A sheet pre-fill is only valid for the form opened from the sheet.
+    if (screenId === "screen-menu") { setPendingEncounter(null); }
     arbattLog("UI", 2001, "Show screen " + screenId);
   }
 
@@ -84,42 +115,83 @@
   });
 
   // ---------------------------------------------------------- app config load
+  /**
+   * Show the configuration error banner and log it (single place for both).
+   * 2026-10-11 (v0.1.15): replaces the silent fallback on built-in defaults.
+   */
+  function reportAppConfigError(eid, message) {
+    appConfigOk = false;
+    document.getElementById("version").textContent = "v?";
+    var banner = document.getElementById("config-error");
+    banner.textContent = "⚠ Configuration introuvable ou invalide (app-config.json) : " +
+      message + ". Rechargez la page ; si le problème persiste, prévenez l’administrateur.";
+    banner.classList.remove("hidden");
+    arbattLog("ERROR", eid, "app-config.json: " + message);
+  }
+
+  /**
+   * Validate the received object against APP_CONFIG_TYPES. Returns the list
+   * of problems (empty = valid). Unknown keys are only a WARN (#2008): the
+   * server may publish a key that an older cached app does not use yet.
+   */
+  function checkAppConfig(data) {
+    var problems = [];
+    Object.keys(APP_CONFIG_TYPES).forEach(function (k) {
+      if (!(k in data)) {
+        problems.push("clé manquante " + k);
+      } else if (typeof data[k] !== APP_CONFIG_TYPES[k]) {
+        problems.push("type invalide pour " + k + " (" + typeof data[k] + ")");
+      }
+    });
+    Object.keys(data).forEach(function (k) {
+      if (!(k in APP_CONFIG_TYPES)) {
+        arbattLog("WARN", 2008, "app-config.json: unexpected key " + k);
+      }
+    });
+    return problems;
+  }
+
   function loadAppConfig() {
     // app-config.json is generated next to the app shell by the server so the
     // single source of truth stays config/param.json (version + durations).
     fetch("app-config.json", { cache: "no-store" })
-      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (r) {
+        if (!r.ok) { throw new Error("HTTP " + r.status); }
+        return r.json();
+      })
       .then(function (data) {
-        if (data) {
-          appConfig.version = data.version || "?";
-          if (typeof data.warmupSeconds === "number") {
-            appConfig.warmupSeconds = data.warmupSeconds;
-          }
-          if (typeof data.timeoutSeconds === "number") {
-            appConfig.timeoutSeconds = data.timeoutSeconds;
-          }
-          if (typeof data.restSeconds === "number") {
-            appConfig.restSeconds = data.restSeconds;
-          }
-          if (typeof data.accelReturns === "number") {
-            appConfig.accelReturns = data.accelReturns;
-          }
-          if (typeof data.gameMinutes === "number") {
-            appConfig.gameMinutes = data.gameMinutes;
-          }
-          if (typeof data.accelPointsThreshold === "number") {
-            appConfig.accelPointsThreshold = data.accelPointsThreshold;
-          }
+        if (!data || typeof data !== "object") {
+          reportAppConfigError(2009, "contenu non JSON objet");
+          return;
         }
+        var problems = checkAppConfig(data);
+        if (problems.length) {
+          reportAppConfigError(2009, problems.join(", "));
+          return;
+        }
+        Object.keys(APP_CONFIG_TYPES).forEach(function (k) { appConfig[k] = data[k]; });
+        appConfigOk = true;
         document.getElementById("version").textContent = "v" + appConfig.version;
         arbattLog("BOOT", 2000, "arBATT PWA config v" + appConfig.version +
           " warmup=" + appConfig.warmupSeconds + "s timeout=" +
           appConfig.timeoutSeconds + "s");
       })
       .catch(function (e) {
-        document.getElementById("version").textContent = "v?";
-        arbattLog("WARN", 2002, "Could not load app-config.json: " + e);
+        // 2026-10-11 (v0.1.15): was a WARN with silent defaults -> now ERROR.
+        reportAppConfigError(2002, "chargement impossible (" + e.message + ")");
       });
+  }
+
+  /**
+   * Guard for every action that needs the durations of app-config.json.
+   * Returns false (and logs ERROR #2010 + alert) when the config is not valid.
+   */
+  function requireAppConfig(action) {
+    if (appConfigOk) { return true; }
+    arbattLog("ERROR", 2010, "Blocked '" + action + "': app-config.json not loaded");
+    window.alert("Impossible : la configuration de l’application n’est pas chargée " +
+      "(voir le message en haut de l’écran).");
+    return false;
   }
 
   // ----------------------------------------------------------- new match form
@@ -192,6 +264,8 @@
 
   function onNewMatchSubmit(ev) {
     ev.preventDefault();
+    // 2026-10-11 (v0.1.15): a match needs the configured durations.
+    if (!requireAppConfig("new match")) { return; }
     var common = {
       playerNames: currentNames(),
       gamesToWin: parseInt(val("gamesToWin"), 10),
@@ -212,7 +286,12 @@
     lastGameIndex = 0;
     returnCount = 0;
     gameClockGameIndex = -1; // force a fresh game clock at the first render
-    arbattLog("UI", 2003, "Match started (" + mode + ")");
+    // The match becomes the sheet encounter's match (or a free match).
+    linkedEncounterId = pendingEncounterId;
+    matchId = window.arbattSheet.uuid();
+    setPendingEncounter(null);
+    arbattLog("UI", 2003, "Match started (" + mode + ")" +
+      (linkedEncounterId ? " for sheet encounter " + linkedEncounterId : ""));
     configureScoreboardForMode();
     render();
     show("screen-score");
@@ -377,10 +456,17 @@
     if (v.finished) { stopGameClockTick(); }
 
     if (v.finished) { showResult(v); }
+    notifyLive();
   }
 
   function showResult(v) {
     var w = v.winner;
+    // Record the result on the match sheet (idempotent: same view -> same
+    // result) and offer a way back to the sheet.
+    if (linkedEncounterId && window.arbattStudio) {
+      window.arbattStudio.onMatchFinished(linkedEncounterId, v);
+    }
+    document.getElementById("over-sheet").classList.toggle("hidden", !linkedEncounterId);
     setText("final-result",
       sideLabel(v, w) + " gagne " + v.games[w] + " manches à " + v.games[1 - w]);
     var list = document.getElementById("games-list");
@@ -445,6 +531,7 @@
       if (navigator.vibrate) { navigator.vibrate([200, 100, 200]); }
       beep();
       arbattLog("TIMER", 2010, "Countdown finished: " + e.title.textContent);
+      notifyLive();
     } else if (timer.isRunning()) {
       e.state.textContent = "En cours…";
       e.startpause.textContent = "Pause";
@@ -483,6 +570,7 @@
     startTick();
     timerRefresh();
     arbattLog("UI", 2011, "Open timer '" + title + "' (" + seconds + "s)");
+    notifyLive();
   }
 
   /** Open the automatic between-games rest countdown (1 min by default). */
@@ -504,6 +592,7 @@
     }
     gameClockResumeAfterModal = false;
     arbattLog("UI", 2012, "Close timer");
+    notifyLive();
     // After the between-games rest, prompt the doubles service designation.
     if (pendingChooserAfterRest && match && !match.view().finished) {
       pendingChooserAfterRest = false;
@@ -518,6 +607,7 @@
       if (timer.isRunning()) { timer.pause(); }
       else { timer.start(); startTick(); }
       timerRefresh();
+      notifyLive();
     });
     e.reset.addEventListener("click", function () {
       if (!timer) { return; }
@@ -526,15 +616,17 @@
       e.startpause.disabled = false;
       stopTick();
       timerRefresh();
+      notifyLive();
     });
     e.close.addEventListener("click", closeTimer);
 
-    document.getElementById("menu-warmup").addEventListener("click", function () {
+    // 2026-10-11 (v0.1.15): one shared handler (was duplicated) + config guard.
+    function openWarmup() {
+      if (!requireAppConfig("warm-up timer")) { return; }
       openTimer("Période d’adaptation", appConfig.warmupSeconds);
-    });
-    document.getElementById("setup-warmup").addEventListener("click", function () {
-      openTimer("Période d’adaptation", appConfig.warmupSeconds);
-    });
+    }
+    document.getElementById("menu-warmup").addEventListener("click", openWarmup);
+    document.getElementById("setup-warmup").addEventListener("click", openWarmup);
   }
 
   // --------------------------------------------------------------- game clock
@@ -735,7 +827,7 @@
     });
     document.getElementById("btn-return-reset").addEventListener("click", function () {
       returnCount = 0;
-      render();
+      render(); // render() ends with notifyLive()
     });
   }
 
@@ -820,6 +912,87 @@
       document.getElementById("sanction").classList.add("hidden");
     });
   }
+
+  // ------------------------------------------------ live state / sheet bridge
+  // 2026-10-06 (v0.1.12): API used by studio.js (scoreboard/OBS mode).
+
+  /** Show/hide the "encounter from the sheet" banner of the setup form. */
+  function setPendingEncounter(enc) {
+    pendingEncounterId = enc ? enc.id : null;
+    var banner = document.getElementById("newmatch-encounter");
+    if (!banner) { return; }
+    banner.classList.toggle("hidden", !enc);
+    banner.textContent = enc
+      ? "🗒️ Rencontre de la feuille de match : " + enc.label : "";
+  }
+
+  /** Set a text input's value and fire "input" so the toss selects follow. */
+  function setInput(id, value) {
+    var el = document.getElementById(id);
+    el.value = value;
+    el.dispatchEvent(new Event("input", { bubbles: true }));
+  }
+
+  /**
+   * Pre-fill the new-match form from a sheet encounter and open it. Side 0 of
+   * the match is always team A of the sheet, which keeps results aligned.
+   * @param {{id:string, kind:string, sides:string[][], label:string}} enc
+   */
+  function prefillFromEncounter(enc) {
+    var radio = document.querySelector("input[name=mode][value='" + enc.kind + "']");
+    radio.checked = true;
+    onModeChange();
+    if (enc.kind === "doubles") {
+      setInput("name0", enc.sides[0][0]);
+      setInput("name1", enc.sides[0][1]);
+      setInput("name2", enc.sides[1][0]);
+      setInput("name3", enc.sides[1][1]);
+    } else {
+      setInput("nameA", enc.sides[0][0]);
+      setInput("nameB", enc.sides[1][0]);
+    }
+    setPendingEncounter(enc);
+    show("screen-newmatch");
+    arbattLog("UI", 2080, "Setup pre-filled from sheet encounter " + enc.id);
+  }
+
+  /** Snapshot of the running countdown (warm-up / time-out / rest), or null. */
+  function liveTimerState() {
+    if (!timer) { return null; }
+    return {
+      label: timer.label,
+      totalMs: timer.durationMs,
+      remainingMs: timer.remainingMs(),
+      running: timer.isRunning(),
+      finished: timer.isFinished()
+    };
+  }
+
+  /**
+   * Match part of the live snapshot published to the overlay. The shape is
+   * defined once, in live.js (matchSnapshot), shared with the overlay demo.
+   */
+  function liveMatchState() {
+    if (!match) { return null; }
+    return window.arbattLive.matchSnapshot(match.view(), {
+      mode: mode,
+      matchId: matchId,
+      pointsPerGame: match.config.pointsPerGame,
+      returnCount: returnCount,
+      accelReturns: appConfig.accelReturns,
+      encounterId: linkedEncounterId
+    });
+  }
+
+  window.arbattApp = {
+    liveState: function () {
+      return { match: liveMatchState(), timer: liveTimerState() };
+    },
+    prefillFromEncounter: prefillFromEncounter,
+    hasMatch: function () { return !!match; },
+    linkedEncounterId: function () { return linkedEncounterId; },
+    version: function () { return appConfig.version; }
+  };
 
   // ----------------------------------------------------- service worker setup
   function registerServiceWorker() {

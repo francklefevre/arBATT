@@ -58,8 +58,9 @@ Key singles rules distilled from it (page references in the manual):
 - **Centralised logging** on both sides: `arbatt_log.py` (Python) and
   `www/js/log.js` (browser). Format `STAMP [TAG] #NNNN message`. Event-number
   convention: `1xxx` server, `2xxx` PWA app, `3xxx` scorer, `4xxx` timer,
-  `5xxx` doubles. (Acceleration reuses `30xx`/`50xx` in the engines and
-  `204x` in the app.)
+  `5xxx` doubles, `6xxx` live hub (arbatt_live.py), `7xxx` sheet.js,
+  `80xx` live.js, `85xx` scoreboard.js, `9xxx` studio.js. (Acceleration
+  reuses `30xx`/`50xx` in the engines and `204x` in the app.)
 - **Doubles rotation**: a game's serve order is `[S, R, S', R']`
   (S=first server, R=first receiver, primes=partners). Using the shared
   `serviceBlocks(p0,p1,pts)` block count `k`:
@@ -105,7 +106,7 @@ Key singles rules distilled from it (page references in the manual):
 - All logs under `logs/`; errors mirrored to `<program>.err.txt`, emptied at
   startup.
 - Version `x.y.z` in `param.json.example`; **bump `z` on every user request**.
-- No GIT commands. Prefer patches. Update README, history file, `output.txt`,
+- GIT used freely (since 2026-10-11): frequent commits, push. Prefer patches. Update README, history file, `output.txt`,
   `kurt.json` as work proceeds.
 
 ## Game chronometry / auto-acceleration
@@ -117,6 +118,82 @@ app calls `match.activateAcceleration()` — no new engine code. The clock reset
 per game (tracked by `gameClockGameIndex`), pauses while a modal timer overlay
 is open and when leaving the scoreboard. To test the trigger headlessly, load
 the app with `{ gameMinutes: 0 }` so the clock is finished immediately.
+
+## Scoreboard / OBS mode (v0.1.12)
+
+- **Data flow**: app.js `render()` / timer transitions -> `notifyLive()` ->
+  studio.js `notify()` builds `{display, match, timer, sheet}` -> live.js
+  `LivePublisher.publish()` -> BroadcastChannel `arbatt-live-<ch>` AND (if the
+  relay was detected) `POST api/live/<ch>` -> `scoreboard.js` via
+  `LiveSubscriber` (BC + EventSource on `api/live/<ch>/events`).
+- **Full snapshots, never deltas**: a late/reconnecting overlay is instantly
+  right. Dedupe = `pub` (UUID per app load) + `seq`. Overlay animations are
+  computed by diffing consecutive snapshots (only increases animate -> undo
+  is never celebrated). `matchId` (UUID per match) distinguishes a new match.
+- **The match payload shape lives ONLY in `live.js matchSnapshot()`**
+  (app + overlay demo). Change it there.
+- **Relay detection, not config**: `GET api/live/_info` (404 on static
+  hosting). Do NOT put a relay flag in `www/app-config.json`: that file is
+  versioned and also served by the static OVH deployment.
+- **SSE framing**: `LiveHub.publish` re-serialises JSON compactly, a raw
+  newline would break the `data:` line. `wait_newer` uses `!=` on seq so a
+  re-created (evicted) channel restarting at 1 is still delivered.
+- **Service worker** must bypass `/api/` (cache-first would cache the relay
+  and hang on the endless SSE response).
+- **jsdom**: no BroadcastChannel -> the harness lends Node's (with `unref()`),
+  which lets ONE process host the app window and the overlay window
+  (tests/test_live_dom.js). jsdom needs an `http://` URL for localStorage.
+- **Visual checks**: headless Chrome is available
+  (`google-chrome --headless=new --window-size=1920,1080
+  --virtual-time-budget=5000 --screenshot=...`). To trigger banners, serve a
+  scratch driver page (iframe the overlay + post states on the BC) with
+  `ARBATT_WEBROOT=<scratch dir with symlinks to www/*>` — run server.py from
+  the repo dir (config/ is relative; env overrides only keys present in
+  param.json). `?demo=1` / `?demo=sheet` animate a fake match.
+- **PHP relay (v0.1.13)** `www/api/live.php` = same API as server.py. Keep
+  the two interchangeable: `tests/test_live_relay.py` runs ONE suite against
+  both (`php -S -t www tests/php_live_router.php`, PHP_CLI_SERVER_WORKERS=4
+  for concurrent SSE + POST). PHP specifics: file store + flock, bounded SSE
+  (shared hosts kill long scripts) + `retry:` + Last-Event-ID, env read from
+  getenv / $_SERVER / `REDIRECT_<name>` (Apache renames SetEnv vars after an
+  internal rewrite — confirmed on a real Apache with mod_php).
+- **Real Apache test rig** (no root needed): `/usr/sbin/apache2 -f <conf> -k
+  start` with Listen 127.0.0.1:8095, mpm_prefork + libphp8.3 + rewrite/env/
+  headers/deflate, AllowOverride All, DocumentRoot with a WordPress-like
+  root .htaccess and a symlink `arbatt -> <repo>/www`. Stop with `-k stop`.
+- **Shell gotcha**: `pkill -f "python3 server.py"` (or any pattern present in
+  the current command line) kills the tool's own shell (exit 144). Use
+  `timeout N` on background servers instead.
+- CSS gotcha: an absolutely positioned box at `left:50%` shrinks to the
+  remaining half width -> use `width:max-content` for the banners.
+
+## Client config & offline (v0.1.14)
+
+- `www/app-config.json` has ONE builder: `arbatt_config.build_app_config()`
+  driven by `ARBATT_APP_CONFIG_KEYS` (param.json). CLI `--print` / `--write`.
+  The file is VERSIONED (static hosting serves it): after any param.json
+  change run `python3 arbatt_config.py --write` (test_app_config.py fails
+  otherwise).
+- Offline proof: `npm run check:offline` (tests/check_offline_chrome.py,
+  embedded CDP client, kills server.py then reloads). The SW must match
+  cache entries with `ignoreSearch:true` (overlay URLs carry ?ch=/?demo=).
+  SW only installs on HTTPS or localhost, not on http://<LAN IP>.
+- v0.1.15: app.js has NO default config values. `APP_CONFIG_TYPES` lists
+  expected keys + types only; a missing/invalid app-config.json shows the
+  red `#config-error` banner and `requireAppConfig()` blocks new match /
+  warm-up. New key in ARBATT_APP_CONFIG_KEYS => also declare it in
+  APP_CONFIG_TYPES. Harness: `loadApp(null, {configStatus:404})` or
+  `{configDrop:['key']}`; stub `win.alert` in jsdom (not implemented there).
+- Workflow agreed 2026-10-11: validate everything on the local PC first
+  (server.py :8080), deploy to the BATT server only after the user's go.
+- Production = https://batt.club/arbatt/ (OVH, Apache+PHP), updated by
+  `git pull` on the server (deploy/INSTALL.md option A-bis). Since
+  2026-10-11 the agent USES GIT freely (rule changed in AGENTS.md; CLAUDE.md
+  is a symlink to it): commit + push to github.com/francklefevre/arBATT,
+  then pull on the server over SSH (access provided by the user); then
+  verify with curl
+  (app-config.json version, scoreboard.html 200, api/live/_info relay:true).
+  State on 2026-10-11 before deploying v0.1.15: live site still v0.1.11.
 
 ## Testing the UI headlessly (jsdom)
 
@@ -163,7 +240,10 @@ PY
 
 ## Open TODO (roadmap)
 
-Done: doubles, warm-up/time-out timers, acceleration rule, jsdom UI tests.
-Next: cards/penalties, per-game chronometry (manche 10 min + repos, which also
-auto-triggers acceleration at 10 min / <18 pts), match persistence in
-`dynamic/`, QR-code generation. See README "Feuille de route".
+Done: doubles, timers, acceleration, cards, game chronometry, scoreboard/OBS
+mode + match sheet (v0.1.12).
+Done in v0.1.13: PHP relay for static hosting.
+Done in v0.1.14: single app-config builder, offline verified in Chrome.
+Done in v0.1.15: no default config values in app.js (visible error).
+Next / proposed: match persistence in `dynamic/`,
+QR-code generation. See README "Feuille de route".

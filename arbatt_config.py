@@ -20,15 +20,24 @@
 # SAME name as the JSON key (e.g. the env var ARBATT_PORT overrides the
 # "ARBATT_PORT" key). Environment values are coerced to the type of the
 # default found in the JSON files (bool / int / float / str / json).
+#
+# 2026-10-07 (v0.1.14): also the SINGLE builder of the client configuration
+# www/app-config.json (build_app_config / write_app_config), previously
+# duplicated in server.py, deploy/update.sh and tests/dom_harness.js (the
+# copies had drifted: the versioned file still said 0.1.12). Command line:
+#   python3 arbatt_config.py --print          # JSON on stdout
+#   python3 arbatt_config.py --write [webroot] # writes <webroot>/app-config.json
 # ---------------------------------------------------------------------------
 
 import os
+import sys
 import json
 
 
 CONFIG_DIR = "config"
 PARAM_FILE = "param.json"
 SECRET_FILE = "secret.json"
+APP_CONFIG_FILE = "app-config.json"
 
 
 def _load_json(path):
@@ -70,3 +79,51 @@ def load_config(config_dir=CONFIG_DIR):
             config[key] = _coerce(os.environ[key], default)
 
     return config
+
+
+def build_app_config(config):
+    """Return the client configuration published to the PWA.
+
+    Its content is driven by the ARBATT_APP_CONFIG_KEYS mapping
+    ({clientKey: PARAM_NAME}) of param.json, plus "version". A missing key
+    raises KeyError on purpose: a silent default would hide a broken config.
+    """
+    app_config = {"version": config["version"]}
+    for client_key, param in config["ARBATT_APP_CONFIG_KEYS"].items():
+        app_config[client_key] = config[param]
+    return app_config
+
+
+def write_app_config(config, webroot):
+    """Write <webroot>/app-config.json; return (path, app_config)."""
+    app_config = build_app_config(config)
+    path = os.path.join(webroot, APP_CONFIG_FILE)
+    with open(path, "w", encoding="utf-8") as fh:
+        json.dump(app_config, fh)
+    return path, app_config
+
+
+def main(argv):
+    """CLI used by deploy/update.sh and tests/dom_harness.js."""
+    config = load_config()
+    if len(argv) >= 1 and argv[0] == "--print":
+        # Program OUTPUT (consumed by other tools), not a log line.
+        sys.stdout.write(json.dumps(build_app_config(config)) + "\n")
+        return 0
+    if len(argv) >= 1 and argv[0] == "--write":
+        from arbatt_log import Logger
+        logger = Logger(program_name="arbatt_config",
+                        log_dir=config.get("ARBATT_LOG_DIR", "logs"),
+                        tags=config.get("ARBATT_LOG_TAGS", {}),
+                        to_console=config.get("ARBATT_LOG_TO_CONSOLE", True),
+                        to_file=config.get("ARBATT_LOG_TO_FILE", True))
+        webroot = argv[1] if len(argv) > 1 else config.get("ARBATT_WEBROOT", "www")
+        path, app_config = write_app_config(config, webroot)
+        logger.log("CONFIG", 1100, "Wrote %s (version %s)" % (path, app_config["version"]))
+        return 0
+    sys.stderr.write("usage: python3 arbatt_config.py --print | --write [webroot]\n")
+    return 2
+
+
+if __name__ == "__main__":
+    sys.exit(main(sys.argv[1:]))

@@ -34,28 +34,27 @@ echo "[arBATT] Pulling latest commit…"
 git pull --ff-only
 
 # Refresh the generated client config if Python is available (optional).
+# 2026-10-07 (v0.1.14): delegated to the single builder of arbatt_config.py
+# (was an inline copy of the key list, which had drifted from server.py).
 if command -v python3 >/dev/null 2>&1; then
   echo "[arBATT] Refreshing www/app-config.json from config/param.json…"
-  python3 - <<'PY'
-import json, os
-cfg = json.load(open("config/param.json"))
-out = {
-    "version": cfg["version"],
-    "warmupSeconds": cfg["ARBATT_WARMUP_SECONDS"],
-    "timeoutSeconds": cfg["ARBATT_TIMEOUT_SECONDS"],
-    "restSeconds": cfg["ARBATT_REST_SECONDS"],
-    "accelReturns": cfg["ARBATT_ACCEL_RETURNS"],
-    "gameMinutes": cfg["ARBATT_GAME_MINUTES"],
-    "accelPointsThreshold": cfg["ARBATT_ACCEL_POINTS_THRESHOLD"],
-}
-json.dump(out, open(os.path.join("www", "app-config.json"), "w"))
-print("  ->", out["version"])
-PY
+  python3 arbatt_config.py --write www
 fi
 
 mkdir -p "$DEST"
 echo "[arBATT] Copying www/ -> $DEST"
 cp -a www/. "$DEST"/
+
+# 2026-10-06 (v0.1.13): the PHP live relay (www/api/live.php) is copied with
+# www/. In a COPY deployment it cannot find config/ next to it, so we point
+# it at this repository's config/ (ARBATT_LIVE_TOKEN, relay settings). Done
+# after EVERY copy because cp overwrites api/.htaccess (a hand-made SetEnv
+# would be lost at the next update).
+if [ -f "$DEST/api/.htaccess" ]; then
+  printf '\n<IfModule mod_env.c>\n  SetEnv ARBATT_CONFIG_DIR %s/config\n</IfModule>\n' \
+    "$(pwd)" >> "$DEST/api/.htaccess"
+  echo "[arBATT] Live relay configured with $(pwd)/config"
+fi
 
 echo "[arBATT] Done. Deployed version:"
 cat "$DEST/app-config.json"; echo

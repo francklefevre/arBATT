@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<!--
+  arBATT - Table tennis club referee companion (PWA)
+
+  Free software: you may do whatever you want with it.
+  Developed by Franck LEFEVRE for K1 ( https://k1info.com ),
+  with the help of his team of kind and playful robots.
+
+  Please use the enormous power of this software to do good things
+  for things and people, always making sure it harms nothing and no one.
+
+  ===========================================================================
+  Public scoreboard overlay — "scoreboard / OBS mode".
+
+  2026-10-06 (v0.1.12): created. Designed as an OBS "Browser source"
+  (1920x1080, TRANSPARENT background) superimposed on the video. It is fed
+  live by the referee app (see js/live.js) and renders the score bug, event
+  banners (game / match won, cards, acceleration), countdowns (time-out, rest,
+  warm-up) and, on demand, the full match sheet. It never accepts input: the
+  referee keeps scoring on their own device.
+
+  URL parameters (all optional except ch):
+    ch=<channel>   channel id shown in the referee app's "Diffusion" panel
+    pos=bl|br|tl|tr|bc   score-bug corner (default bl = bottom-left)
+    scale=<n>      score-bug size multiplier (default 1)
+    bg=<color>     page background, e.g. bg=00b140 for a chroma key
+                   (default: transparent)
+    relay=0        do not open the network relay stream (same-browser only)
+    demo=1         animated fake match, to position the overlay in OBS
+  ===========================================================================
+-->
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>arBATT Scoreboard</title>
+  <link rel="icon" href="icons/BATT_Man_2026.svg" type="image/svg+xml" />
+  <link rel="stylesheet" href="css/scoreboard.css" />
+</head>
+<body>
+  <!-- 1920x1080 stage, scaled to fit the viewport by scoreboard.js. -->
+  <div class="stage" id="stage">
+
+    <!-- Full match sheet (shown when the referee ticks "feuille de match"). -->
+    <section class="sheet-panel hidden" id="sheet-panel" aria-live="polite">
+      <header class="sp-head">
+        <img class="sp-logo" src="icons/BATT_Man_2026.svg" alt="" />
+        <div class="sp-titles">
+          <div class="sp-title" id="sp-title"></div>
+          <div class="sp-score">
+            <span class="sp-team" id="sp-team-a"></span>
+            <span class="sp-num" id="sp-score-a">0</span>
+            <span class="sp-sep">–</span>
+            <span class="sp-num" id="sp-score-b">0</span>
+            <span class="sp-team" id="sp-team-b"></span>
+          </div>
+        </div>
+      </header>
+      <ol class="sp-list" id="sp-list"></ol>
+    </section>
+
+    <!-- Big event banner (game won, match won, card, acceleration). -->
+    <div class="banner hidden" id="banner" aria-live="assertive">
+      <div class="banner-kicker" id="banner-kicker"></div>
+      <div class="banner-main" id="banner-main"></div>
+      <div class="banner-sub" id="banner-sub"></div>
+    </div>
+
+    <!-- Score bug. -->
+    <div class="bug hidden" id="bug">
+      <div class="bug-head">
+        <img class="bug-logo" src="icons/BATT_Man_2026.svg" alt="" />
+        <span class="bug-team hidden" id="bug-team"></span>
+        <span class="bug-ctx" id="bug-ctx"></span>
+      </div>
+      <div class="bug-row" id="row-0">
+        <span class="b-serve" title="Au service"></span>
+        <span class="b-name"></span>
+        <span class="b-cards"></span>
+        <span class="b-flag"></span>
+        <span class="b-sets"></span>
+        <span class="b-games"></span>
+        <span class="b-points"></span>
+      </div>
+      <div class="bug-row" id="row-1">
+        <span class="b-serve" title="Au service"></span>
+        <span class="b-name"></span>
+        <span class="b-cards"></span>
+        <span class="b-flag"></span>
+        <span class="b-sets"></span>
+        <span class="b-games"></span>
+        <span class="b-points"></span>
+      </div>
+      <div class="bug-foot hidden" id="bug-foot">
+        <span class="pill pill-timer hidden" id="pill-timer"></span>
+        <span class="pill pill-accel hidden" id="pill-accel"></span>
+      </div>
+    </div>
+
+    <!-- Setup hint, never shown inside OBS. -->
+    <div class="waiting hidden" id="waiting"></div>
+  </div>
+
+  <script src="js/log.js"></script>
+  <!-- scorer.js only drives the ?demo=1 fake match. -->
+  <script src="js/scorer.js"></script>
+  <script src="js/sheet.js"></script>
+  <script src="js/live.js"></script>
+  <script src="js/scoreboard.js"></script>
+</body>
+</html>

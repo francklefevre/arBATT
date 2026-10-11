@@ -57,6 +57,14 @@ body {
 }
 .app-header h1 { margin: 0; font-size: 1.3rem; letter-spacing: 1px; }
 .version { color: var(--muted); font-size: .8rem; }
+/* 2026-10-11 (v0.1.15): visible app-config.json error (no silent fallback). */
+.config-error {
+  padding: 10px 16px;
+  background: var(--danger);
+  color: var(--text);
+  font-size: .9rem;
+  font-weight: 600;
+}
 
 .app-footer {
   padding: 8px 16px;
@@ -392,3 +400,85 @@ legend { color: var(--accent); padding: 0 6px; }
 .timer-state { color: var(--muted); min-height: 1.4rem; margin: 4px 0 18px; }
 .timer-controls { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
 .timer-controls button { padding: 14px 8px; }
+
+/* ===========================================================================
+ * 2026-10-06 (v0.1.12): match sheet screen + broadcast (OBS) panel.
+ * ======================================================================== */
+.form textarea {
+  padding: 12px; border-radius: 10px; border: 1px solid var(--card-b);
+  background: var(--card); color: var(--text); font-size: 1rem;
+  font-family: inherit; resize: vertical;
+}
+.form small, .dchooser-label small { color: var(--muted); font-weight: 400; }
+
+/* Banner of the setup form when it comes from a sheet encounter. */
+.encounter-banner {
+  margin: -6px 0 14px; padding: 10px 12px; border-radius: 10px;
+  background: var(--card); border-left: 4px solid var(--accent);
+}
+
+.sheet-teams { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+/* Team score banner: "BATT 3 – 2 Visiteurs". */
+.sheet-score {
+  display: grid; grid-template-columns: 1fr auto auto auto 1fr;
+  align-items: center; gap: 8px; margin: 16px 0 10px;
+  padding: 12px; border-radius: var(--radius); background: var(--card);
+}
+.ss-name { color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ss-name:first-child { text-align: right; }
+.ss-num { font-size: 2rem; font-weight: 800; color: var(--accent); }
+.ss-sep { color: var(--muted); }
+
+/* Encounter rows. */
+.sheet-list { list-style: none; margin: 0 0 12px; padding: 0; display: grid; gap: 8px; }
+.sheet-row {
+  display: grid; grid-template-columns: auto auto 1fr; gap: 4px 8px;
+  align-items: center; padding: 10px; border-radius: 12px;
+  background: var(--card); border: 2px solid transparent;
+}
+.sheet-row.live { border-color: var(--accent); }
+.sheet-row.done { opacity: .85; }
+.sr-num { color: var(--muted); font-variant-numeric: tabular-nums; }
+.sr-kind {
+  font-size: .75rem; font-weight: 700; padding: 2px 6px; border-radius: 6px;
+  background: var(--card-b); color: var(--muted);
+}
+.sr-sides { overflow-wrap: anywhere; }
+.sr-sides .win { color: var(--accent); font-weight: 700; }
+.sr-vs { color: var(--muted); }
+.sr-result { grid-column: 1 / -1; color: var(--text); }
+.sr-result:empty { display: none; }
+.sr-result small { color: var(--muted); }
+.sheet-row.live .sr-result { color: var(--accent); }
+.sr-actions { grid-column: 1 / -1; display: flex; gap: 6px; justify-content: flex-end; }
+.sr-btn {
+  min-width: 40px; padding: 8px; border: 0; border-radius: 8px;
+  background: var(--card-b); color: var(--text); font-size: 1rem;
+}
+.sr-btn[data-act="play"] { background: var(--green); }
+.sr-btn:disabled { opacity: .35; }
+.sheet-empty { color: var(--muted); text-align: center; }
+
+.sheet-box {
+  margin-top: 12px; padding: 10px 12px; border-radius: 12px; background: var(--card);
+}
+.sheet-box summary { cursor: pointer; font-weight: 600; padding: 4px 0; }
+.sheet-box[open] summary { margin-bottom: 10px; }
+
+/* Broadcast panel. */
+.live-box { max-width: 520px; text-align: left; }
+.live-url {
+  width: 100%; padding: 10px; border-radius: 10px; border: 1px solid var(--card-b);
+  background: var(--bg); color: var(--text); font-family: ui-monospace, monospace;
+  font-size: .8rem;
+}
+.live-status { color: var(--muted); font-size: .9rem; }
+.live-status.bad { color: var(--danger); font-weight: 700; }
+.check { display: flex; gap: 10px; align-items: center; margin: 8px 0; }
+.check input { width: 20px; height: 20px; }
+.live-box label:not(.check) { display: grid; gap: 6px; color: var(--muted); }
+.live-box input[type=password] {
+  padding: 10px; border-radius: 10px; border: 1px solid var(--card-b);
+  background: var(--card); color: var(--text);
+}

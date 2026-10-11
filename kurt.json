@@ -10,7 +10,8 @@
     "ARBATT_HOST": "0.0.0.0",
     "ARBATT_PORT": "8080",
     "ARBATT_WEBROOT": "www",
-    "ARBATT_SERVER_HEADER": "arBATT"
+    "ARBATT_SERVER_HEADER": "arBATT",
+    "ARBATT_LIVE_RELAY": "true"
   },
   "serverPort": 8080,
   "schedule": ""

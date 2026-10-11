@@ -4,6 +4,178 @@ Free software developed by Franck LEFEVRE for K1 ( https://k1info.com ),
 with the help of his team of kind and playful robots.
 ============================================================================
 
+2026-10-11 19:00 — v0.1.15 — No silent config fallback in the PWA.
+  - www/js/app.js: removed the hard-coded default durations of appConfig
+    (they hid a missing/stale app-config.json behind a console WARN).
+    NEW APP_CONFIG_TYPES (expected key -> type, no value), checkAppConfig(),
+    reportAppConfigError() (red banner #config-error + "v?" badge + ERROR
+    log) and requireAppConfig() guard on new match and warm-up timer.
+    Events: #2002 now ERROR (fetch/HTTP failure), NEW #2009 (missing key or
+    wrong type), NEW #2010 (action blocked); #2008 stays WARN (unknown key).
+    The two duplicated warm-up handlers are factorised (openWarmup()).
+  - www/index.html: NEW <div id="config-error" role="alert">; style.css:
+    .config-error (uses --danger).
+  - Tests: NEW tests/test_config_error_dom.js (valid / 404 / missing key),
+    registered in run_all.js and package.json (test:config-error);
+    dom_harness.js gains opts.configStatus / opts.configDrop.
+    npm test -> 12/12 PASS.
+  - Config: version 0.1.15 (param.json + .example, package.json);
+    www/app-config.json regenerated; SW cache -> arbatt-v0_1_15.
+  - Note: adding a key to ARBATT_APP_CONFIG_KEYS now also requires declaring
+    its type in APP_CONFIG_TYPES (README updated).
+  Deploy impact (checked): no new file to ship besides the regenerated
+    www/app-config.json (must be committed); deploy/update.sh already
+    regenerates it; INSTALL.md, kurt.json, .htaccess, .gitignore unchanged.
+    Static hosting: if app-config.json is missing on the BATT server, the app
+    now shows the error instead of running on defaults. No Docker/Traefik.
+
+2026-10-07 00:16 — v0.1.14 — Single app-config.json builder + verified offline PWA.
+  Factorisation:
+    - arbatt_config.py: build_app_config() / write_app_config() + CLI
+      (--print / --write [webroot], logged as #1100 in logs/arbatt_config.log).
+      Content driven by the NEW ARBATT_APP_CONFIG_KEYS mapping of param.json
+      ({clientKey: PARAM} + version); unknown parameter -> KeyError (no
+      silent default).
+    - Replaced the 3 hand-kept copies: server.py (inline dict),
+      deploy/update.sh (inline Python heredoc), tests/dom_harness.js (JS copy,
+      already missing restSeconds) -> harness now runs `arbatt_config.py
+      --print`. The versioned www/app-config.json had drifted (0.1.12):
+      regenerated, and NEW tests/test_app_config.py fails if it is stale.
+    - app.js: one generic loop over the received keys instead of 6 per-key
+      blocks; unexpected key/type -> WARN #2008.
+  Offline:
+    - NEW tests/check_offline_chrome.py (npm run check:offline): real headless
+      Chrome via a dependency-free CDP client; installs the SW, STOPS
+      server.py, reloads and plays. Result: 12/12 (version from cached
+      app-config, points, names, match sheet, overlay).
+    - BUG FOUND & FIXED: scoreboard.html?ch=…/?demo=… did not open offline:
+      sw.js cache-first used an exact URL match while the pre-cached entry has
+      no query. Now caches.match(req, {ignoreSearch:true}) and responses to
+      URLs with a query are not stored (avoids one cache entry per channel).
+    - sw.js: app-config.json added to the pre-cache (first launch offline).
+  Config: version 0.1.14; NEW ARBATT_APP_CONFIG_KEYS (+ doc key) in
+    param.json + .example. SW -> arbatt-v0_1_14.
+  Tests: npm test -> 11/11 PASS (+ test_app_config.py); offline check PASS.
+  Deploy impact (checked):
+    - deploy/update.sh: now calls `python3 arbatt_config.py --write www`.
+    - deploy/INSTALL.md: regeneration command updated.
+    - www/app-config.json regenerated (0.1.14) — must be committed.
+    - kurt.json, .htaccess files, .gitignore: unchanged. No Docker/Traefik.
+
+2026-10-06 23:55 — v0.1.13 — PHP live relay for static hosting (scoreboard / OBS mode).
+  - NEW www/api/live.php: same HTTP API as the Python relay (_info, GET/POST
+    <ch>, <ch>/events SSE, X-Arbatt-Token via hash_equals), so live.js needs
+    no protocol change. File-backed store (<data dir>/<ch>.live: seq line +
+    compact JSON, temp file + rename under flock, eviction by mtime).
+    Bounded SSE responses (ARBATT_LIVE_PHP_STREAM_SECONDS, poll
+    ARBATT_LIVE_PHP_POLL_MS, 2 KB padding, retry: 1000) to respect shared-host
+    time limits; honours Last-Event-ID on reconnection. Config: defaults ->
+    param.json -> secret.json -> env, config dir = ARBATT_CONFIG_DIR or
+    <repo>/config. Env read from getenv(), $_SERVER and REDIRECT_<name>
+    (Apache SetEnv under PHP-FPM / after the internal rewrite — verified with
+    a real Apache). Central logger (logs/live_php.log + .err.txt, events
+    66xx); the err file is not emptied per request (documented). Log stamps
+    in ARBATT_LIVE_PHP_TIMEZONE (PHP defaulted to UTC, Python logs local).
+  - NEW www/api/.htaccess: RewriteEngine On for this dir only,
+    api/live/<path> -> live.php?path=<path>; no-gzip + no-cache (mod_deflate
+    would buffer SSE).
+  - server.py: Last-Event-ID honoured too (parity); .php files never served
+    (SECURITY #1014).
+  - live.js: normal SSE end + reconnection logged as LIVE #8026 instead of a
+    WARN every 25 s; only a CLOSED stream is a WARN. studio.js: "relay
+    unavailable" message mentions both relays.
+  - deploy/update.sh: appends "SetEnv ARBATT_CONFIG_DIR <repo>/config" to
+    <dest>/api/.htaccess after EVERY copy (cp overwrites it: a hand-made
+    SetEnv would be lost).
+  Config: version 0.1.13; NEW ARBATT_LIVE_PHP_DATA_DIR, _STREAM_SECONDS,
+    _POLL_MS, _TIMEZONE (param.json + .example). SW -> arbatt-v0_1_13.
+  Tests: test_live_relay.py refactored: ONE HTTP suite run against the Python
+    relay AND the PHP relay (php -S + NEW tests/php_live_router.php emulating
+    the rewrite) + token, REDIRECT_ env, disabled relay, Last-Event-ID,
+    bounded stream, err-file logging. 50 assertions. npm test -> 10/10 PASS.
+    Manual checks: real Apache 2.4 + mod_php (user instance) with WordPress
+    root rules + symlinked /arbatt/: rewrite OK, WP front controller intact,
+    SSE real-time despite mod_deflate, copy deployment + SetEnv token OK,
+    live.php source never disclosed. Chrome via CDP: overlay keeps updating
+    across 2 s PHP stream cycles (Last-Event-ID 0 -> 1 -> 2 in the log).
+  Deploy impact (checked):
+    - deploy/update.sh: SetEnv append (see above); www/ copy already includes
+      api/ and its .htaccess (cp -a www/.).
+    - deploy/INSTALL.md: section rewritten (hosting matrix, PHP prerequisites
+      and check URL, data dir, token for symlink/copy/clone layouts, warning:
+      config/ is public in the clone-in-web variant); upload list now
+      mentions scoreboard.html, media/, api/ (hidden .htaccess).
+    - www/.htaccess unchanged (api/.htaccess re-enables rewrite locally).
+    - kurt.json: unchanged (the orchestrator runs server.py, not PHP).
+    - .gitignore: unchanged (relay data lives outside the repo by default).
+    - No Docker / Traefik / backup scripts in this project; relay data is
+      ephemeral -> nothing to back up.
+
+2026-10-06 23:43 — v0.1.12 — Scoreboard / OBS mode + match sheet ("feuille de match").
+  Live broadcast (the referee keeps scoring, the public sees the score):
+    - NEW www/scoreboard.html + css/scoreboard.css + js/scoreboard.js: public
+      overlay designed as an OBS Browser source (1920x1080, transparent).
+      Score bug (names, serve dot, game history, games, points, cards, game/
+      match point flags, context, team score), countdown pill (time-out /
+      rest / warm-up, counted down locally from receipt time), acceleration
+      pill, animated banners (match intro, game won, card + penalty,
+      acceleration, time-out, VICTORY with confetti), optional full match
+      sheet panel. URL params: ch, pos, scale, bg, relay, demo.
+      Animations are derived by DIFFING snapshots: an undo never celebrates,
+      a reconnecting overlay replays nothing. The match-won banner pre-empts
+      the banner queue (seen in Chrome: it waited ~8 s behind minor banners).
+    - NEW www/js/live.js: LivePublisher / LiveSubscriber over TWO transports
+      used together: BroadcastChannel (same browser) + HTTP relay (POST + SSE).
+      Full snapshots tagged pub (UUID per page load) + seq -> dedupe.
+      matchSnapshot() is the single definition of the match payload (used by
+      app.js AND the overlay demo).
+    - NEW arbatt_live.py (LiveHub, in-memory latest doc per channel,
+      Condition-based SSE wake-up, channel cap + eviction) and server.py routes
+      GET /api/live/_info, GET|POST /api/live/<ch>, GET /api/live/<ch>/events
+      (SSE + keep-alive), optional X-Arbatt-Token (hmac.compare_digest),
+      do_POST added. Relay presence is DETECTED by the client (_info 404 on a
+      static host) instead of being written into the versioned
+      app-config.json (which would have leaked "relay on" to static hosting).
+  Match sheet:
+    - NEW www/js/sheet.js (pure model, format arbatt-sheet v1, UUID ids,
+      team score derived from results, cross generator, import validation).
+    - NEW www/js/studio.js: #screen-sheet (title, teams, add / generate /
+      reorder / delete / clear, ▶ referee -> pre-filled setup form, export /
+      import JSON, two-tap confirmations instead of window.confirm) and the
+      #live "Diffusion / OBS" panel (overlay URL, copy/open, show score / show
+      sheet, relay status, token, new channel). localStorage keys
+      arbatt.sheet.v1 / arbatt.live.v1.
+    - app.js: window.arbattApp bridge (liveState, prefillFromEncounter...),
+      notifyLive() after every render and timer transition, matchId (UUID) per
+      match, result written to the sheet when the match ends, "back to sheet"
+      button on the result screen.
+    - index.html: menu entries (Feuille de match, Diffusion / OBS), sheet
+      screen, broadcast panel, 📺 button on the scoreboard, encounter banner on
+      the setup form. style.css: sheet + panel styles.
+  Config: version 0.1.12; NEW ARBATT_LIVE_RELAY, ARBATT_LIVE_MAX_BYTES,
+    ARBATT_LIVE_MAX_CHANNELS, ARBATT_LIVE_KEEPALIVE_SECONDS, log tag LIVE
+    (param.json + .example); NEW secret ARBATT_LIVE_TOKEN (secret.json +
+    .example). SW -> arbatt-v0_1_12, new assets pre-cached, /api/ bypassed.
+  Tests: NEW test_sheet.js, test_live_dom.js (app + overlay in two jsdom
+    windows linked by Node's BroadcastChannel), test_live_relay.py (real
+    ThreadingHTTPServer on an ephemeral port). dom_harness: http:// URL
+    (localStorage), URL-routed fetch stub, loadOverlay(), broadcast option.
+    run_all.js runs .py suites with python3 and reports the STDOUT verdict.
+    npm test -> 10/10 PASS. Visual check in headless Chrome (demo, banners,
+    victory + confetti, relay POST -> SSE -> overlay, doubles + sheet panel).
+  Deploy impact (checked):
+    - deploy/update.sh: no change needed (new files are inside www/, copied
+      as a whole; app-config.json format unchanged).
+    - deploy/INSTALL.md: NEW section "Mode scoreboard / OBS : quel
+      déploiement ?" (static host = same-browser only; server.py on the OBS
+      PC for phone + OBS; token; nginx buffering).
+    - www/.htaccess: unchanged (scoreboard.html is a plain static page).
+    - kurt.json: environment.ARBATT_LIVE_RELAY added.
+    - deploy/docker-compose.prod.yml, deploy/traefik/dynamic.yml,
+      deploy/backup-restore.sh, docker/Dockerfile.*: do not exist in this
+      project (static PWA + optional Python server) -> nothing to rebuild or
+      push. The relay keeps no data on disk -> nothing to back up.
+
 2026-06-02 19:15 — v0.1.11 — Club hall photo + README "pub".
   - Added a real photo of the club hall to the "Mieux connaître BATT" page.
     Sourced from https://batt.club/ (team photo in the hall, with markers and

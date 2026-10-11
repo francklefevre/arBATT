@@ -23,7 +23,15 @@ const SUITES = [
   'test_acceleration.js',
   'test_sanctions.js',
   'test_chrono.js',
-  'test_ui_dom.js'
+  'test_ui_dom.js',
+  // 2026-10-06 (v0.1.12): scoreboard / OBS mode.
+  'test_sheet.js',
+  'test_live_dom.js',
+  'test_live_relay.py',
+  // 2026-10-07 (v0.1.14): single app-config builder + versioned file in sync.
+  'test_app_config.py',
+  // 2026-10-11 (v0.1.15): no silent config fallback in app.js.
+  'test_config_error_dom.js'
 ];
 
 let failed = 0;
@@ -31,9 +39,14 @@ console.log('arBATT — running ' + SUITES.length + ' test suites\n');
 
 SUITES.forEach(function (file) {
   const full = path.join(__dirname, file);
-  const res = spawnSync(process.execPath, [full], { encoding: 'utf8' });
+  // .py suites (server-side relay) run with python3, the others with Node.
+  const cmd = file.endsWith('.py') ? 'python3' : process.execPath;
+  const res = spawnSync(cmd, [full], { encoding: 'utf8', timeout: 60000 });
   const out = (res.stdout || '') + (res.stderr || '');
-  const lastLine = out.trim().split('\n').filter(Boolean).pop() || '(no output)';
+  // 2026-10-06: summary taken from STDOUT (the suite's verdict line); stderr
+  // warnings printed later used to hide it.
+  const lastLine = (res.stdout || out).trim().split('\n').filter(Boolean).pop() ||
+    '(no output)';
   if (res.status === 0) {
     console.log('  ✓ ' + file + ' — ' + lastLine);
   } else {

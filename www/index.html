@@ -26,6 +26,9 @@
     <h1>arBATT</h1>
     <span class="version" id="version">v—</span>
   </header>
+  <!-- 2026-10-11 (v0.1.15): shown by app.js when app-config.json is missing
+       or invalid (replaces the former silent fallback on built-in defaults). -->
+  <div class="config-error hidden" id="config-error" role="alert"></div>
 
   <main id="main">
 
@@ -42,6 +45,15 @@
         <button class="menu-item" id="menu-warmup">
           <span class="menu-icon">⏱️</span>
           <span class="menu-label">Période d'adaptation <em>(2 min)</em></span>
+        </button>
+        <!-- 2026-10-06 (v0.1.12): scoreboard / OBS mode entries. -->
+        <button class="menu-item" data-action="goto" data-target="screen-sheet">
+          <span class="menu-icon">🗒️</span>
+          <span class="menu-label">Feuille de match</span>
+        </button>
+        <button class="menu-item open-live">
+          <span class="menu-icon">📺</span>
+          <span class="menu-label">Diffusion / OBS</span>
         </button>
         <button class="menu-item" data-action="goto" data-target="screen-flow">
           <span class="menu-icon">📋</span>
@@ -61,6 +73,8 @@
     <!-- ========================= NEW MATCH SETUP ======================== -->
     <section class="screen hidden" id="screen-newmatch">
       <h2>Nouvelle partie</h2>
+      <!-- Shown when the form was pre-filled from a match-sheet encounter. -->
+      <p class="encounter-banner hidden" id="newmatch-encounter"></p>
       <form id="form-newmatch" class="form">
         <fieldset>
           <legend>Type de partie</legend>
@@ -216,6 +230,7 @@
         <button class="btn-secondary hidden" id="btn-service">🔁 Service</button>
         <button class="btn-secondary" id="btn-accel">⏩ Accélération</button>
         <button class="btn-secondary" id="btn-carton">🟨 Carton</button>
+        <button class="btn-secondary open-live" id="btn-live">📺 Diffusion</button>
         <button class="btn-secondary" id="btn-quit" data-action="goto" data-target="screen-menu">Menu</button>
       </div>
     </section>
@@ -227,7 +242,90 @@
       <ul class="games-list" id="games-list"></ul>
       <div class="actions">
         <button class="btn-secondary" data-action="goto" data-target="screen-menu">Menu</button>
+        <button class="btn-secondary hidden" id="over-sheet" data-action="goto"
+                data-target="screen-sheet">🗒️ Feuille de match</button>
         <button class="btn-primary" data-action="goto" data-target="screen-newmatch">Nouvelle partie</button>
+      </div>
+    </section>
+
+    <!-- ========================== MATCH SHEET =========================== -->
+    <!-- 2026-10-06 (v0.1.12): prepare the encounters of a team meeting,
+         referee them one by one (▶) and follow the team score. Results are
+         recorded automatically at the end of each match. Built by studio.js;
+         stored on this device (localStorage) and exportable as JSON. -->
+    <section class="screen hidden" id="screen-sheet">
+      <h2>Feuille de match</h2>
+      <div class="form">
+        <label>Titre de la rencontre
+          <input type="text" id="sheet-title" maxlength="60"
+                 placeholder="Championnat par équipes — journée 3" />
+        </label>
+        <div class="sheet-teams">
+          <label>Équipe A <input type="text" id="sheet-teamA" maxlength="24" /></label>
+          <label>Équipe B <input type="text" id="sheet-teamB" maxlength="24" /></label>
+        </div>
+      </div>
+
+      <div class="sheet-score">
+        <span class="ss-name" id="sheet-name-a">Équipe A</span>
+        <span class="ss-num" id="sheet-score-a">0</span>
+        <span class="ss-sep">–</span>
+        <span class="ss-num" id="sheet-score-b">0</span>
+        <span class="ss-name" id="sheet-name-b">Équipe B</span>
+      </div>
+
+      <ol class="sheet-list" id="sheet-list"></ol>
+      <p class="sheet-empty" id="sheet-empty">Aucune rencontre pour l'instant :
+        ajoutez-les ci-dessous ou générez-les depuis les compositions.</p>
+
+      <button type="button" class="btn-primary full" id="sheet-next">▶ Arbitrer la prochaine rencontre</button>
+
+      <details class="sheet-box">
+        <summary>➕ Ajouter une rencontre</summary>
+        <div class="form">
+          <div class="seg">
+            <label><input type="radio" name="sheet-kind" value="singles" checked /> Simple</label>
+            <label><input type="radio" name="sheet-kind" value="doubles" /> Double</label>
+          </div>
+          <label>Côté équipe A <small>(double : « Nom 1 / Nom 2 »)</small>
+            <input type="text" id="sheet-sideA" maxlength="50" />
+          </label>
+          <label>Côté équipe B
+            <input type="text" id="sheet-sideB" maxlength="50" />
+          </label>
+          <button type="button" class="btn-secondary full" id="sheet-add-btn">Ajouter</button>
+          <p class="timer-state" id="sheet-add-state"></p>
+        </div>
+      </details>
+
+      <details class="sheet-box">
+        <summary>⚡ Générer depuis les compositions</summary>
+        <div class="form">
+          <label>Joueurs équipe A <small>(un par ligne)</small>
+            <textarea id="sheet-rosterA" rows="4"></textarea>
+          </label>
+          <label>Joueurs équipe B <small>(un par ligne)</small>
+            <textarea id="sheet-rosterB" rows="4"></textarea>
+          </label>
+          <label class="inline">Doubles à ajouter
+            <input type="number" id="sheet-doubles" value="0" min="0" max="4" />
+          </label>
+          <button type="button" class="btn-secondary full" id="sheet-gen-btn">Générer (chacun contre chacun)</button>
+          <p class="timer-state" id="sheet-gen-state"></p>
+        </div>
+      </details>
+
+      <div class="controls">
+        <button type="button" class="btn-secondary" id="sheet-export">⬇️ Exporter</button>
+        <button type="button" class="btn-secondary" id="sheet-import">⬆️ Importer</button>
+        <button type="button" class="btn-secondary" id="sheet-new">🆕 Nouvelle feuille</button>
+        <button type="button" class="btn-secondary open-live">📺 Diffusion</button>
+      </div>
+      <input type="file" id="sheet-file" accept="application/json,.json" class="hidden" />
+      <p class="timer-state" id="sheet-io-state"></p>
+
+      <div class="actions">
+        <button class="btn-secondary" data-action="goto" data-target="screen-menu">Retour</button>
       </div>
     </section>
 
@@ -500,6 +598,36 @@
       </div>
     </div>
 
+    <!-- ===================== BROADCAST (OBS) PANEL ===================== -->
+    <!-- 2026-10-06 (v0.1.12): address of the public overlay (scoreboard.html)
+         to add as an OBS "Browser source", and what the public display shows.
+         The referee keeps scoring here; the overlay follows live. -->
+    <div class="overlay hidden" id="live" role="dialog" aria-modal="true">
+      <div class="timer-box live-box">
+        <h2 class="timer-title">📺 Diffusion / OBS</h2>
+        <p class="dchooser-label">Adresse de l'affichage public
+          <small>(OBS : Source navigateur 1920×1080)</small></p>
+        <input type="text" id="live-url" class="live-url" readonly />
+        <div class="timer-controls">
+          <button class="btn-secondary" id="live-copy">📋 Copier</button>
+          <button class="btn-secondary" id="live-open">↗ Ouvrir</button>
+        </div>
+        <p class="timer-state" id="live-copy-state"></p>
+        <p class="live-status" id="live-status"></p>
+        <label class="check"><input type="checkbox" id="live-show-score" checked />
+          Afficher le score à l'écran</label>
+        <label class="check"><input type="checkbox" id="live-show-sheet" />
+          Afficher la feuille de match à l'écran</label>
+        <label class="hidden" id="live-token-row">Jeton du relais
+          <input type="password" id="live-token" autocomplete="off" />
+        </label>
+        <div class="timer-controls">
+          <button class="btn-secondary" id="live-newch">🔀 Nouveau canal</button>
+          <button class="btn-primary" id="live-close">Fermer</button>
+        </div>
+      </div>
+    </div>
+
   </main>
 
   <footer class="app-footer">
@@ -510,6 +638,9 @@
   <script src="js/timer.js"></script>
   <script src="js/scorer.js"></script>
   <script src="js/doubles.js"></script>
+  <script src="js/sheet.js"></script>
+  <script src="js/live.js"></script>
+  <script src="js/studio.js"></script>
   <script src="js/app.js"></script>
 </body>
 </html>

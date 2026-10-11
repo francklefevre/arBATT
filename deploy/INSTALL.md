@@ -27,7 +27,9 @@ toucher à WordPress lui-même.
 2. **Téléverser** tout le contenu de `www/` dans un dossier `arbatt/` à la
    racine web du site (via FTP/SFTP ou le gestionnaire de fichiers de
    l'hébergeur). Le dossier doit contenir `index.html`, `manifest.webmanifest`,
-   `sw.js`, `app-config.json`, `.htaccess`, `css/`, `js/`, `icons/`.
+   `sw.js`, `app-config.json`, `.htaccess`, `scoreboard.html`, `css/`, `js/`,
+   `icons/`, `media/` et `api/` (avec son `.htaccess` : fichier caché, pensez à
+   afficher les fichiers cachés dans votre client FTP).
 3. **Ouvrir** `https://mon-club.fr/arbatt/` : l'appli s'affiche. Sur mobile, le
    navigateur propose « Ajouter à l'écran d'accueil » / « Installer ».
 
@@ -136,11 +138,14 @@ Il contient la version et les durées paramétrables, lues par la PWA :
 ```
 
 Pour **régénérer** ce fichier à partir de `config/param.json` avant un
-déploiement (par ex. après avoir changé une durée), lancez le serveur une fois :
+déploiement (par ex. après avoir changé une durée) :
 
 ```bash
-python3 server.py    # écrit www/app-config.json, puis Ctrl-C
+python3 arbatt_config.py --write    # écrit www/app-config.json
 ```
+
+(`server.py` et `deploy/update.sh` utilisent ce même générateur. La liste des
+clés publiées est `ARBATT_APP_CONFIG_KEYS` dans `config/param.json`.)
 
 puis téléversez le dossier `www/` mis à jour.
 
@@ -164,6 +169,66 @@ déploiement :
   le site WordPress** en PWA — ce n'est pas le but ici (on sert *notre* appli).
 - **iframe dans une page WordPress** : complique la portée du service worker et
   l'installation. À éviter.
+
+---
+
+## Mode scoreboard / OBS : quel déploiement ?
+
+*(v0.1.12, relais PHP en v0.1.13.)* L'affichage public `scoreboard.html` et le
+relais PHP `api/live.php` (+ `api/.htaccess`) sont livrés avec `www/` : **rien
+à ajouter**.
+
+| Hébergement | Arbitre et OBS sur **deux appareils** | Même navigateur (2 fenêtres) |
+|-------------|---------------------------------------|------------------------------|
+| **Apache + PHP ≥ 7.4** (OVH, WordPress — options A, A-bis, B) | ✅ relais **PHP** `api/live.php` | ✅ |
+| **`python3 server.py`** (PC de diffusion, réseau local, sans Internet) | ✅ relais **Python** | ✅ |
+| **Statique pur** sans PHP (GitHub Pages, Netlify… — option C) | ❌ (`/api/live/` → 404) | ✅ BroadcastChannel |
+
+### Relais PHP : prérequis et vérification
+
+- **PHP ≥ 7.4**, **mod_rewrite** autorisé dans les `.htaccess` (c'est le cas
+  dès que WordPress fonctionne). `www/api/.htaccess` réactive la réécriture
+  pour ce seul dossier (le `.htaccess` de l'appli la désactive) et route
+  `api/live/<…>` vers `live.php`.
+- Vérification : `https://VOTRE-SITE/arbatt/api/live/_info` doit répondre
+  `{"relay":true,"tokenRequired":false}` (puis `true` une fois le jeton posé).
+- Les données (un petit fichier par canal) vont par défaut dans le dossier
+  temporaire du système (`/tmp/arbatt-live`), **hors du web**. Pour un autre
+  dossier : `ARBATT_LIVE_PHP_DATA_DIR` (jamais sous `www/`).
+- Le `.htaccess` désactive la compression et le cache sur `api/` (sinon le
+  flux SSE arriverait par paquets). Testé derrière Apache 2.4 + `mod_deflate`
+  avec des règles WordPress à la racine.
+
+### Protéger la publication par un jeton (recommandé en ligne)
+
+Sans jeton, toute personne connaissant l'adresse d'un canal (un UUID, donc
+difficile à deviner) pourrait y publier. Pour l'exiger :
+
+- **Lien symbolique / clone** (le relais trouve `config/` du dépôt) : mettez
+  `"ARBATT_LIVE_TOKEN": "<jeton>"` dans `~/arbatt-src/config/secret.json`
+  (copie de `secret.json.example`).
+- **Copie** (`deploy/update.sh`) : idem dans le `config/secret.json` du dépôt ;
+  `update.sh` ajoute à chaque mise à jour, dans `<dossier web>/api/.htaccess`,
+  `SetEnv ARBATT_CONFIG_DIR <dépôt>/config` pour que le relais le trouve.
+- Ou directement en variable d'environnement : `SetEnv ARBATT_LIVE_TOKEN …`
+  dans `api/.htaccess` (attention : écrasé par `update.sh` à chaque copie).
+
+L'arbitre saisit ensuite le même jeton dans le panneau **📺 Diffusion**.
+
+> ⚠️ Variante « cloner directement dans le web » (`~/www/arbatt/`) : le dossier
+> `config/` y est **public**. N'y créez pas de `secret.json` ; passez le jeton
+> par `SetEnv ARBATT_LIVE_TOKEN` dans `www/api/.htaccess`, ou préférez la
+> méthode du lien symbolique.
+
+### Relais Python (sans Internet)
+
+Lancez `python3 server.py` **sur le PC OBS** et ouvrez l'appli sur le
+téléphone via `http://<IP-du-PC>:8080/`. En HTTP sur une IP locale le service
+worker ne s'installe pas (pas de mode hors-ligne), ce qui est sans conséquence
+ici : le PC est sur place. Derrière un proxy **nginx**, gardez le *buffering*
+désactivé pour `/api/live/*/events` (le serveur envoie `X-Accel-Buffering: no`).
+
+Le service worker ne met **jamais** `/api/` en cache (données temps réel).
 
 ---
 
