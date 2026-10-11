@@ -578,10 +578,23 @@
 
   function overlayUrl() { return displayUrl(OVERLAY_PAGE); }
 
-  /** Fill both display addresses (overlay + tablet). */
+  /**
+   * Draw `text` as a QR code (SVG) inside the element `id`.
+   * 2026-10-11 (v0.1.21): vendored qrcode-generator (window.qrcode), type
+   * number 0 = smallest fitting version, error correction "M".
+   */
+  function renderQr(id, text) {
+    var qr = window.qrcode(0, "M");
+    qr.addData(text);
+    qr.make();
+    $(id).innerHTML = qr.createSvgTag({ cellSize: 4, margin: 16, scalable: true });
+  }
+
+  /** Fill both display addresses (overlay + tablet) and the tablet QR code. */
   function renderDisplayUrls() {
     $("live-url").value = overlayUrl();
     $("court-url").value = displayUrl(COURT_PAGE);
+    renderQr("court-qr", displayUrl(COURT_PAGE));
   }
 
   /**
@@ -654,6 +667,12 @@
     });
     bindDisplayUrl("live", OVERLAY_PAGE, "arbatt-scoreboard");
     bindDisplayUrl("court", COURT_PAGE, "arbatt-court");
+    // 2026-10-11 (v0.1.21): show / hide the tablet QR code.
+    $("court-qr-btn").addEventListener("click", function (ev) {
+      var hidden = $("court-qr").classList.toggle("hidden");
+      ev.currentTarget.setAttribute("aria-expanded", String(!hidden));
+      arbattLog("UI", 9044, "Tablet QR code " + (hidden ? "hidden" : "shown"));
+    });
     $("live-show-score").addEventListener("change", function (ev) {
       liveCfg.display.scorebug = ev.target.checked;
       saveLiveCfg();

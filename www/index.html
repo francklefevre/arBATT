@@ -648,7 +648,12 @@
         <div class="timer-controls">
           <button class="btn-secondary" id="court-copy">📋 Copier</button>
           <button class="btn-secondary" id="court-open">↗ Ouvrir</button>
+          <button class="btn-secondary" id="court-qr-btn" aria-expanded="false">🔳 QR code</button>
         </div>
+        <!-- 2026-10-11 (v0.1.21): scan from the tablet instead of typing the
+             address (generated offline by js/vendor/qrcode.js). -->
+        <div class="qr-box hidden" id="court-qr" role="img"
+             aria-label="QR code de l'écran bord de table"></div>
         <p class="timer-state" id="court-copy-state"></p>
         <p class="live-status" id="live-status"></p>
         <label class="check"><input type="checkbox" id="live-show-score" checked />
@@ -691,6 +696,7 @@
   <script src="js/sheet.js"></script>
   <script src="js/teams.js"></script>
   <script src="js/live.js"></script>
+  <script src="js/vendor/qrcode.js"></script>
   <script src="js/studio.js"></script>
   <script src="js/app.js"></script>
 </body>

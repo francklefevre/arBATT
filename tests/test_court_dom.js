@@ -41,6 +41,19 @@ async function run() {
   // The broadcast panel gives the tablet address on the same channel.
   click(A.querySelector('#screen-menu .open-live'));
   ok($a('court-url').value === 'http://localhost/court.html?ch=' + ch, 'tablet address in the broadcast panel');
+  // 2026-10-11 (v0.1.21): QR code of the tablet address (hidden by default).
+  ok($a('court-qr').classList.contains('hidden') && $a('court-qr').querySelector('svg'),
+    'tablet QR code drawn, hidden until asked');
+  click($a('court-qr-btn'));
+  ok(!$a('court-qr').classList.contains('hidden') &&
+     $a('court-qr-btn').getAttribute('aria-expanded') === 'true', 'QR code shown on demand');
+  const ref = app.window.qrcode(0, 'M');
+  ref.addData($a('court-url').value);
+  ref.make();
+  // Compare the drawn modules (path "d"): jsdom re-serialises the markup.
+  const refPath = /<path d="([^"]+)"/.exec(ref.createSvgTag({ cellSize: 4, margin: 16, scalable: true }))[1];
+  ok($a('court-qr').querySelector('path').getAttribute('d') === refPath,
+    'QR code encodes exactly the tablet address');
   click($a('live-close'));
 
   const court = loadCourt('?ch=' + ch, { broadcast: true });

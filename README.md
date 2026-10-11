@@ -140,6 +140,7 @@ arBATT/
 │   ├── court.html              # ★ Écran bord de table (tablette)
 │   ├── css/court.css           # Habillage de la tablette (grands chiffres)
 │   ├── js/court.js             # Rendu de la tablette
+│   ├── js/vendor/qrcode.js     # qrcode-generator 2.0.4 (MIT, K. Arase), QR hors ligne
 │   └── icons/                  # Icônes PWA (svg + png 192/512/maskable)
 ├── dynamic/                # Données personnalisées (git-ignoré)
 ├── logs/                   # Tous les fichiers de logs (git-ignoré)
@@ -400,8 +401,10 @@ Hors OBS, la page affiche un message d'aide (« en attente de l'arbitre » /
 
 Pour les joueurs et le public autour de l'aire de jeu : le **score courant en
 très grand**, lisible à plusieurs mètres. Panneau **📺 Diffusion** →
-« Écran bord de table » → **Copier** l'adresse et l'ouvrir sur la tablette
-(même canal que l'overlay OBS ; les deux peuvent fonctionner en même temps).
+« Écran bord de table » → **Copier** l'adresse et l'ouvrir sur la tablette,
+ou bien **🔳 QR code** et le **scanner avec l'appareil photo de la tablette**
+(*v0.1.21* ; QR généré dans l'appli, fonctionne hors connexion). Même canal
+que l'overlay OBS ; les deux peuvent fonctionner en même temps.
 
 - Affiche : noms, **points**, manches gagnées, point de service, « balle de
   manche / de match », contexte (manche, décisive, accélération, rencontre
@@ -764,6 +767,11 @@ des **valides** et des **para** qui visent les **Jeux**, du **loisir** à la
 → [batt.club](https://batt.club/) · l'appli en ligne : <https://batt.club/arbatt/>
 
 ## Licence
+
+> **Composant tiers** (*v0.1.21*) : `www/js/vendor/qrcode.js` est
+> [qrcode-generator](https://github.com/kazuhikoarase/qrcode-generator) 2.0.4
+> de Kazuhiko Arase, sous **licence MIT**, intégré sans modification.
+
 
 Logiciel **libre** : vous pouvez en faire ce que vous voulez. Développé par
 **Franck LEFEVRE** pour la société **K1** ( <https://k1info.com> ), aidé de son

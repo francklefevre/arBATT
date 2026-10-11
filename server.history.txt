@@ -4,6 +4,21 @@ Free software developed by Franck LEFEVRE for K1 ( https://k1info.com ),
 with the help of his team of kind and playful robots.
 ============================================================================
 
+2026-10-11 22:05 — v0.1.21 — QR code of the courtside tablet address.
+  - NEW www/js/vendor/qrcode.js: qrcode-generator 2.0.4 (Kazuhiko Arase,
+    MIT) vendored unchanged (+ origin note) so the QR works offline; added
+    to index.html and to the SW pre-cache.
+  - Broadcast panel: "🔳 QR code" button under "Écran bord de table" toggles
+    #court-qr (SVG, error correction M). studio.js renderQr(id, text), drawn
+    with the addresses (renderDisplayUrls: also on channel change). Event 9044.
+  - Tests: test_court_dom.js +3 (hidden by default, shown on demand, path
+    identical to a reference QR of the address; jsdom re-serialises SVG so
+    the markup itself cannot be compared). Real scan check: Chrome
+    screenshot of the SVG decoded by jsQR -> exact URL. npm test 14/14 PASS.
+  - README: tablet section, tree, third-party licence note.
+  - Version 0.1.21, SW arbatt-v0_1_21.
+  Deploy impact (checked): new static file www/js/vendor/qrcode.js only.
+
 2026-10-11 21:55 — v0.1.20 deployed on batt.club (git pull, 96241b6). Checked
   online: app-config 0.1.20, court.html/js/css + teams.js served (200), SW
   arbatt-v0_1_20, relay OK, no PHP error; court.html?demo=1 rendered in

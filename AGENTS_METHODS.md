@@ -219,6 +219,11 @@ the app with `{ gameMinutes: 0 }` so the clock is finished immediately.
   --window-size=800,1280 --virtual-time-budget=12000 --screenshot=x.png
   "http://localhost:8080/court.html?demo=1"` (use a fresh --user-data-dir).
 
+- QR codes: vendored qrcode-generator (www/js/vendor/qrcode.js, MIT). To
+  prove a QR really scans: render its SVG in headless Chrome
+  (--screenshot) and decode the PNG with jsqr + pngjs (npm, in the
+  scratchpad). jsdom re-serialises SVG: compare the path "d", not innerHTML.
+
 ## Testing the UI headlessly (jsdom)
 
 `tests/test_ui_dom.js` loads the real `www/index.html` in jsdom and drives it.

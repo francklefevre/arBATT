@@ -21,7 +21,7 @@
  * ---------------------------------------------------------------------------
  */
 
-var CACHE_VERSION = "arbatt-v0_1_20"; // 2026-10-11: bump (teams + courtside tablet)
+var CACHE_VERSION = "arbatt-v0_1_21"; // 2026-10-11: bump (tablet QR code)
 
 var APP_SHELL = [
   "./",
@@ -38,6 +38,7 @@ var APP_SHELL = [
   "./js/sheet.js",
   "./js/teams.js",
   "./js/live.js",
+  "./js/vendor/qrcode.js",
   "./js/studio.js",
   "./js/app.js",
   "./js/scoreboard.js",

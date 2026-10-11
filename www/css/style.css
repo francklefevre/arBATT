@@ -508,3 +508,8 @@ legend { color: var(--accent); padding: 0 6px; }
 .ts-rec { font-weight: 700; color: var(--accent); font-variant-numeric: tabular-nums; }
 .live-results { align-items: center; flex-wrap: wrap; margin: 6px 0; }
 .live-results > span { color: var(--muted); }
+
+/* ---- Tablet QR code in the broadcast panel (2026-10-11, v0.1.21) ---- */
+/* White quiet zone is part of the SVG; the box only sizes it. */
+.qr-box { margin: 8px auto; width: min(70vw, 260px); }
+.qr-box svg { display: block; width: 100%; height: auto; border-radius: 8px; }
