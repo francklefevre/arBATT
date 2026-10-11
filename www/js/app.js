@@ -50,7 +50,8 @@
     restSeconds: "number",
     accelReturns: "number",
     gameMinutes: "number",
-    accelPointsThreshold: "number"
+    accelPointsThreshold: "number",
+    historyMax: "number"     // 2026-10-11 (v0.1.18): free-match history size
   };
   var appConfig = {};        // filled by loadAppConfig() only
   var appConfigOk = false;   // true once every expected key is valid
@@ -465,6 +466,16 @@
     // result) and offer a way back to the sheet.
     if (linkedEncounterId && window.arbattStudio) {
       window.arbattStudio.onMatchFinished(linkedEncounterId, v);
+    } else if (window.arbattStudio) {
+      // 2026-10-11 (v0.1.18): a free match (no sheet encounter) used to leave
+      // no trace: its result is now kept in the history shown on the overlay.
+      window.arbattStudio.onFreeMatchFinished({
+        matchId: matchId,
+        kind: mode,
+        sides: [sideLabel(v, 0), sideLabel(v, 1)],
+        view: v,
+        max: appConfig.historyMax
+      });
     }
     document.getElementById("over-sheet").classList.toggle("hidden", !linkedEncounterId);
     setText("final-result",

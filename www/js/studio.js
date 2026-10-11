@@ -40,12 +40,15 @@
 
   var SHEET_KEY = "arbatt.sheet.v1";
   var LIVE_KEY = "arbatt.live.v1";
+  // 2026-10-11 (v0.1.18): results of free matches (played without the sheet).
+  var HISTORY_KEY = "arbatt.history.v1";
   var OVERLAY_PAGE = "scoreboard.html";
   // Two-tap confirmation window for destructive buttons (no window.confirm:
   // it blocks the UI and is unavailable in some embedded browsers).
   var CONFIRM_MS = 3000;
 
   var sheet = null;            // current match sheet (null until created)
+  var history = null;          // free-match results (a sheet object, see below)
   var liveCfg = null;          // persisted broadcast settings
   var publisher = null;        // LivePublisher
   var relayInfo = null;        // result of detectRelay() (null = no relay)
@@ -73,16 +76,20 @@
     }
   }
 
-  function loadSheet() {
-    var obj = loadJSON(SHEET_KEY);
+  // 2026-10-11 (v0.1.18): shared by the match sheet and the free-match
+  // history (both are sheet objects); was specific to the sheet.
+  function loadSheetFrom(key) {
+    var obj = loadJSON(key);
     if (!obj) { return null; }
     try {
       return S.validateSheet(obj);
     } catch (e) {
-      arbattLog("ERROR", 9002, "Stored match sheet is invalid, ignored: " + e.message);
+      arbattLog("ERROR", 9002, "Stored " + key + " is invalid, ignored: " + e.message);
       return null;
     }
   }
+
+  function loadSheet() { return loadSheetFrom(SHEET_KEY); }
 
   function saveSheet() {
     if (sheet) { saveJSON(SHEET_KEY, sheet); }
@@ -103,14 +110,30 @@
     };
   }
 
+  /**
+   * Sheet panel content of the overlay. 2026-10-11 (v0.1.18): the match sheet
+   * when it has encounters, otherwise the free-match history (flag
+   * `history: true`: the overlay then shows "Résultats" without team score).
+   */
   function publicSheet() {
-    if (!sheet) { return null; }
-    return {
-      title: sheet.title,
-      teams: sheet.teams.slice(),
-      score: S.teamScore(sheet),
-      encounters: sheet.encounters.map(publicEncounter)
-    };
+    if (sheet && sheet.encounters.length) {
+      return {
+        title: sheet.title,
+        teams: sheet.teams.slice(),
+        score: S.teamScore(sheet),
+        encounters: sheet.encounters.map(publicEncounter)
+      };
+    }
+    if (history && history.encounters.length) {
+      return {
+        history: true,
+        title: "Résultats",
+        teams: ["", ""],
+        score: [0, 0],
+        encounters: history.encounters.map(publicEncounter)
+      };
+    }
+    return null;
   }
 
   /** Build and publish the full snapshot. Called by app.js after any change. */
@@ -152,6 +175,24 @@
     saveSheet();
     renderSheet();
     // app.js publishes right after (render -> notifyLive), no notify() here.
+  }
+
+  /** Free match finished (see app.js showResult and S.recordFreeMatch). */
+  function onFreeMatchFinished(opts) {
+    if (!history) { history = S.createSheet({ title: "Résultats" }); }
+    var enc = S.recordFreeMatch(history, opts);
+    if (!enc) { return; } // already recorded (result screen shown again)
+    saveJSON(HISTORY_KEY, history);
+    renderHistoryCount();
+    arbattLog("SCORE", 9012, "Free match kept in history: " +
+      opts.sides[0] + " vs " + opts.sides[1] + " " + enc.result.games.join("-"));
+    // app.js publishes right after (render -> notifyLive), no notify() here.
+  }
+
+  function renderHistoryCount() {
+    var n = history ? history.encounters.length : 0;
+    $("live-history-clear").textContent = "🗑 Effacer les résultats des parties libres (" + n + ")";
+    $("live-history-clear").disabled = n === 0;
   }
 
   function refereeEncounter(id) {
@@ -436,6 +477,7 @@
     $("live-url").value = overlayUrl();
     $("live-show-score").checked = !!liveCfg.display.scorebug;
     $("live-show-sheet").checked = !!liveCfg.display.sheet;
+    renderHistoryCount();
     $("live-token").value = liveCfg.token || "";
     $("live-copy-state").textContent = "";
     renderLiveStatus();
@@ -478,6 +520,17 @@
       saveLiveCfg();
       notify();
     });
+    $("live-history-clear").addEventListener("click", function (ev) {
+      confirmTap(ev.currentTarget, function () {
+        history = null;
+        try { window.localStorage.removeItem(HISTORY_KEY); } catch (e) {
+          arbattLog("ERROR", 9001, "Cannot clear " + HISTORY_KEY + ": " + e);
+        }
+        renderHistoryCount();
+        arbattLog("UI", 9042, "Free-match history cleared");
+        notify();
+      });
+    });
     $("live-token").addEventListener("change", function (ev) {
       liveCfg.token = ev.target.value;
       saveLiveCfg();
@@ -499,6 +552,7 @@
   // --------------------------------------------------------------- bootstrap
   document.addEventListener("DOMContentLoaded", function () {
     sheet = loadSheet();
+    history = loadSheetFrom(HISTORY_KEY);
     liveCfg = loadJSON(LIVE_KEY) || {};
     if (!liveCfg.channel) { liveCfg.channel = S.uuid(); }
     liveCfg.display = liveCfg.display || { scorebug: true, sheet: false };
@@ -524,6 +578,8 @@
   window.arbattStudio = {
     notify: notify,
     onMatchFinished: onMatchFinished,
+    onFreeMatchFinished: onFreeMatchFinished,
+    getHistory: function () { return history; },
     // Exposed for tests / debugging from the console.
     getSheet: function () { return sheet; },
     getChannel: function () { return liveCfg && liveCfg.channel; },

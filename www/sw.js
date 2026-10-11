@@ -21,7 +21,7 @@
  * ---------------------------------------------------------------------------
  */
 
-var CACHE_VERSION = "arbatt-v0_1_17"; // 2026-10-11: bump (PHP relay SSE padding)
+var CACHE_VERSION = "arbatt-v0_1_18"; // 2026-10-11: bump (free-match history)
 
 var APP_SHELL = [
   "./",

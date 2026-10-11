@@ -134,7 +134,7 @@ Il contient la version et les durées paramétrables, lues par la PWA :
 ```json
 { "version": "x.y.z", "warmupSeconds": 120, "timeoutSeconds": 60,
   "restSeconds": 60, "accelReturns": 13, "gameMinutes": 10,
-  "accelPointsThreshold": 18 }
+  "accelPointsThreshold": 18, "historyMax": 10 }
 ```
 
 Pour **régénérer** ce fichier à partir de `config/param.json` avant un

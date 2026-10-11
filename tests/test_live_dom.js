@@ -204,6 +204,61 @@ async function run() {
   ok(last && last.protocol === 1 && last.match && last.match.points[1] === 1,
     'last relayed snapshot carries the live score');
 
+  // ------------------------- free matches -> history on the overlay (v0.1.18)
+  // Seen on batt.club: on the 2nd free match ("Nouvelle partie", no sheet)
+  // the result of the 1st was visible nowhere.
+  const app3 = loadApp(null, { broadcast: true });
+  await wait(10);
+  const H3 = helpers(app3.window);
+  const ov3 = loadOverlay('?ch=' + app3.window.arbattStudio.getChannel(), { broadcast: true });
+  const O3 = helpers(ov3.window);
+  await wait(20);
+  H3.click(H3.doc.querySelector('#screen-menu .open-live'));
+  ok(H3.$('live-history-clear').disabled, 'history clear button disabled when empty');
+  H3.check('live-show-sheet', true);
+  H3.click(H3.$('live-close'));
+  const playFree = async function (a, b) {
+    H3.click(H3.doc.querySelector("#screen-menu [data-target='screen-newmatch']"));
+    H3.$('nameA').value = a;
+    H3.$('nameB').value = b;
+    H3.$('gamesToWin').value = '2';
+    H3.$('form-newmatch').dispatchEvent(
+      new app3.window.Event('submit', { bubbles: true, cancelable: true }));
+    for (let i = 0; i < 11; i++) { H3.click(H3.$('card-0')); }
+    H3.click(H3.$('timer-close'));
+    for (let i = 0; i < 11; i++) { H3.click(H3.$('card-0')); }
+    await wait(20);
+  };
+  ok(!O3.visible('sheet-panel'), 'no sheet and no history: nothing to show');
+  await playFree('Gil', 'Hugo');
+  ok(app3.window.arbattStudio.getHistory().encounters.length === 1,
+    'free match result kept in the history');
+  // 2nd free match starts: the 1st result stays on screen.
+  H3.click(H3.doc.querySelector("#screen-over [data-target='screen-newmatch']") ||
+    H3.doc.querySelector("[data-target='screen-menu']"));
+  H3.click(H3.doc.querySelector("#screen-menu [data-target='screen-newmatch']"));
+  H3.$('nameA').value = 'Ines';
+  H3.$('nameB').value = 'Jules';
+  H3.$('form-newmatch').dispatchEvent(
+    new app3.window.Event('submit', { bubbles: true, cancelable: true }));
+  await wait(20);
+  ok(O3.visible('sheet-panel') && O3.$('sheet-panel').classList.contains('history'),
+    'overlay shows the free-match results panel during the next match');
+  const rows3 = O3.doc.querySelectorAll('#sp-list .sp-row');
+  ok(rows3.length === 1 && /Gil/.test(rows3[0].textContent) &&
+     rows3[0].querySelector('.sp-res').textContent === '2-0',
+    'previous result listed with its score');
+  ok(!O3.visible('bug-team'), 'no team score chip for free matches');
+  ok(JSON.parse(app3.window.localStorage.getItem('arbatt.history.v1')).encounters.length === 1,
+    'history persisted in localStorage');
+  H3.click(H3.doc.querySelector('#screen-score .open-live') ||
+    H3.doc.querySelector('.open-live'));
+  H3.click(H3.$('live-history-clear'));
+  H3.click(H3.$('live-history-clear'));
+  await wait(20);
+  ok(app3.window.arbattStudio.getHistory() === null && !O3.visible('sheet-panel'),
+    'history cleared (two taps) and removed from the overlay');
+
   console.log(fails === 0 ? 'ALL LIVE TESTS PASSED' : fails + ' LIVE TEST(S) FAILED');
   process.exit(fails === 0 ? 0 : 1);
 }

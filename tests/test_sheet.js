@@ -83,6 +83,22 @@ const bad = JSON.parse(JSON.stringify(copy));
 bad.encounters[0].result = { winner: 5 };
 throws(function () { S.validateSheet(bad); }, 'invalid result rejected');
 
+// --- free-match history (2026-10-11, v0.1.18) ------------------------------
+const hist = S.createSheet({ title: 'Résultats' });
+const h1 = S.recordFreeMatch(hist, { matchId: 'm1', kind: 'singles',
+  sides: ['Alice', 'Bruno'], view: m.view(), max: 2 });
+ok(h1 && h1.result.games.join('-') === '2-0' && h1.matchId === 'm1', 'free match recorded');
+ok(S.recordFreeMatch(hist, { matchId: 'm1', kind: 'singles',
+  sides: ['Alice', 'Bruno'], view: m.view(), max: 2 }) === null &&
+  hist.encounters.length === 1, 'same match recorded only once');
+S.recordFreeMatch(hist, { matchId: 'm2', kind: 'singles', sides: ['C', 'D'], view: m.view(), max: 2 });
+S.recordFreeMatch(hist, { matchId: 'm3', kind: 'singles', sides: ['E', 'F'], view: m.view(), max: 2 });
+ok(hist.encounters.length === 2 && hist.encounters[0].matchId === 'm2',
+  'history keeps the max most recent results');
+ok(S.validateSheet(JSON.parse(JSON.stringify(hist))) && true, 'history survives storage');
+throws(function () { S.recordFreeMatch(hist, { matchId: 'm4', kind: 'singles',
+  sides: ['G', 'H'], view: m.view() }); }, 'missing max is an error (no default)');
+
 // --- live snapshot builder ----------------------------------------------------
 const d = new DoublesScorer({ playerNames: ['A1', 'A2', 'B1', 'B2'] });
 d.pointTo(1);

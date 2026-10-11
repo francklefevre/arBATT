@@ -84,6 +84,10 @@ qui applique les règles du *Manuel pratique d'arbitre de club* de la FFTT
   (simples et doubles, génération « chacun contre chacun »), arbitrez-les une à
   une (▶), les **résultats s'inscrivent automatiquement** et le **score
   d'équipe** est visible dans l'appli **et** à l'écran. Export / import JSON.
+- 🧾 **Résultats des parties libres** (*v0.1.18*) : une partie lancée sans la
+  feuille (« Nouvelle partie ») est gardée dans un historique (les
+  `ARBATT_HISTORY_MAX` dernières), affiché sur l'écran OBS pendant les
+  parties suivantes.
 - 🦇 Aux couleurs du club : logo **BATT-Man** (Bayard Argentan Tennis de Table).
 - 📋 **Déroulé de la partie** : les étapes d'une partie dans l'ordre, chacune
   avec un encadré « À ce stade je ne dois pas oublier ».
@@ -339,6 +343,11 @@ permanence — sans souci pour quelques sources OBS, à surveiller au-delà.
   reconnecte ne rejoue rien.
 - **Feuille de match** plein panneau (case « Afficher la feuille de match à
   l'écran » du panneau *Diffusion*), rencontre en cours surlignée.
+- **Résultats des parties libres** (*v0.1.18*) : sans feuille de match (ou
+  avec une feuille vide), la même case affiche le panneau « Résultats » : les
+  parties libres terminées, avec leur score en manches (sans score d'équipe).
+  Bouton « 🗑 Effacer les résultats des parties libres (N) » du panneau
+  *Diffusion* (deux appuis pour confirmer).
 
 Le panneau **📺 Diffusion** (menu, tableau de marque, feuille de match) permet de
 copier/ouvrir l'adresse, de choisir ce qui est affiché (score / feuille), de
@@ -379,7 +388,9 @@ Menu → **🗒️ Feuille de match** :
 
 La feuille et les réglages de diffusion sont conservés **sur l'appareil**
 (stockage du navigateur, clés `arbatt.sheet.v1` et `arbatt.live.v1`) : pensez
-à **exporter** la feuille pour la garder.
+à **exporter** la feuille pour la garder. L'historique des parties libres est
+sous la clé `arbatt.history.v1` (même format qu'une feuille ; chaque entrée a en
+plus `matchId` et `playedAt`).
 
 ## Règles de comptage implémentées
 
@@ -488,6 +499,7 @@ priorité est : `param.json` → `secret.json` → variable d'environnement.
 | `ARBATT_ACCEL_RETURNS`   | int     | `13`          | Nombre de renvois du relanceur donnant le point (règle d'accélération). |
 | `ARBATT_GAME_MINUTES`    | int     | `10`          | Durée de manche (min) avant déclenchement de l'accélération. |
 | `ARBATT_ACCEL_POINTS_THRESHOLD` | int | `18`       | Seuil de points sous lequel l'accélération se déclenche à la limite de temps. |
+| `ARBATT_HISTORY_MAX`     | int     | `10`          | Nombre de résultats de parties libres gardés sur l'appareil et affichés à l'écran OBS (les plus anciens sont retirés). Publié à l'appli (`historyMax`). |
 | `ARBATT_APP_CONFIG_KEYS` | object  | voir fichier  | **Seule** liste de ce que reçoit la PWA dans `www/app-config.json` : `{"cléClient": "NOM_DU_PARAMÈTRE"}` (+ `version`, toujours incluse). Pour exposer un nouveau paramètre à l'appli, ajoutez-le ici **et** déclarez son type dans `APP_CONFIG_TYPES` (`www/js/app.js`). |
 | `ARBATT_LIVE_RELAY`      | bool    | `true`        | Active le relais temps réel du mode scoreboard (`/api/live/`). `false` : le serveur répond 404 comme un hébergement statique. |
 | `ARBATT_LIVE_MAX_BYTES`  | int     | `65536`       | Taille max. d'un instantané publié (octets) ; au-delà : HTTP 413. |
@@ -520,7 +532,8 @@ priorité est : `param.json` → `secret.json` → variable d'environnement.
 - **`config/*.json`** — objets JSON. Les clés commençant par `_` sont purement
   documentaires (notice de licence, description) et sont ignorées au chargement.
 - **`www/app-config.json`** — `{"version", "warmupSeconds", "timeoutSeconds",
-  "restSeconds", "accelReturns", "gameMinutes", "accelPointsThreshold"}`
+  "restSeconds", "accelReturns", "gameMinutes", "accelPointsThreshold",
+  "historyMax"}`
   (clés définies par `ARBATT_APP_CONFIG_KEYS`), **généré** par un **unique**
   constructeur (`arbatt_config.build_app_config`) : au démarrage de
   `server.py`, par `deploy/update.sh`, ou à la main :
@@ -554,7 +567,9 @@ priorité est : `param.json` → `secret.json` → variable d'environnement.
   server, receiver, leftSide, infractions[], refereeCalled, accelerated,
   returnCount, accelReturns, timeoutsUsed, completedGames, encounterId` ;
   `timer` = `{label, totalMs, remainingMs, running, finished}` ou `null` ;
-  `sheet` = feuille avec libellés et score d'équipe pré-calculés. `pub` (UUID
+  `sheet` = feuille avec libellés et score d'équipe pré-calculés — ou, sans
+  feuille, l'historique des parties libres (`history: true`, titre
+  « Résultats »). `pub` (UUID
   par chargement de l'appli) + `seq` permettent à l'overlay d'ignorer les
   doublons (même instantané reçu par les deux transports).
 - **API du relais** (`server.py`) :

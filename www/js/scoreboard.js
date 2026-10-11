@@ -118,7 +118,8 @@
     // Team score chip (team meeting) when a sheet with encounters exists.
     var team = $("bug-team");
     var sh = st.sheet;
-    var hasTeam = !!(sh && sh.encounters.length);
+    // 2026-10-11 (v0.1.18): the free-match history is no team meeting.
+    var hasTeam = !!(sh && !sh.history && sh.encounters.length);
     team.classList.toggle("hidden", !hasTeam);
     if (hasTeam) {
       setText(team, sh.teams[0] + " " + sh.score[0] + " – " + sh.score[1] + " " + sh.teams[1]);
@@ -231,6 +232,8 @@
     panel.classList.toggle("hidden", !show);
     if (!show) { return; }
     setText($("sp-title"), sh.title || "");
+    // 2026-10-11 (v0.1.18): free-match history has no teams nor team score.
+    $("sheet-panel").classList.toggle("history", !!sh.history);
     setText($("sp-team-a"), sh.teams[0]);
     setText($("sp-team-b"), sh.teams[1]);
     setText($("sp-score-a"), sh.score[0]);

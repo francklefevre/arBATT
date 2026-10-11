@@ -2,7 +2,7 @@
   "_notice": "arBATT — Free software developed by Franck LEFEVRE for K1 ( https://k1info.com ), with the help of his team of kind and playful robots. Please use the enormous power of this software to do good things for things and people, always making sure it harms nothing and no one.",
   "_description": "Non-confidential parameters for arBATT. Every value here can also be overridden by an environment variable bearing the SAME name (e.g. ARBATT_PORT). See README.md for the full reference.",
 
-  "version": "0.1.17",
+  "version": "0.1.18",
 
   "ARBATT_HOST": "0.0.0.0",
   "ARBATT_PORT": 8080,
@@ -16,6 +16,8 @@
   "ARBATT_ACCEL_RETURNS": 13,
   "ARBATT_GAME_MINUTES": 10,
   "ARBATT_ACCEL_POINTS_THRESHOLD": 18,
+  "_ARBATT_HISTORY_MAX": "Number of free-match results kept on the device and shown on the OBS overlay when no match sheet is in use (oldest dropped first).",
+  "ARBATT_HISTORY_MAX": 10,
 
   "_ARBATT_APP_CONFIG_KEYS": "Client config published as www/app-config.json: {clientKey: PARAM_NAME}. The ONLY place listing what the PWA receives; 'version' is always included. Built by arbatt_config.build_app_config().",
   "ARBATT_APP_CONFIG_KEYS": {
@@ -24,7 +26,8 @@
     "restSeconds": "ARBATT_REST_SECONDS",
     "accelReturns": "ARBATT_ACCEL_RETURNS",
     "gameMinutes": "ARBATT_GAME_MINUTES",
-    "accelPointsThreshold": "ARBATT_ACCEL_POINTS_THRESHOLD"
+    "accelPointsThreshold": "ARBATT_ACCEL_POINTS_THRESHOLD",
+    "historyMax": "ARBATT_HISTORY_MAX"
   },
 
   "ARBATT_LIVE_RELAY": true,

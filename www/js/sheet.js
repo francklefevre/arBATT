@@ -158,6 +158,31 @@
     return enc;
   }
 
+  /**
+   * 2026-10-11 (v0.1.18): free-match history. A finished match played
+   * WITHOUT the match sheet is appended to `history` (a sheet object used as
+   * a plain result list, so the overlay renders it with the sheet panel).
+   * opts = {matchId, kind, sides: [label0, label1], view, max}.
+   * Idempotent on matchId (the result screen may be rendered twice); keeps
+   * only the `max` most recent entries. Returns the entry, or null if the
+   * match was already recorded.
+   */
+  function recordFreeMatch(history, opts) {
+    if (!opts.matchId) { throw new Error("recordFreeMatch needs a matchId"); }
+    if (!(opts.max >= 1)) { throw new Error("recordFreeMatch needs max >= 1"); }
+    var dup = history.encounters.filter(function (e) { return e.matchId === opts.matchId; });
+    if (dup.length) { return null; }
+    var enc = addEncounter(history, opts.kind, opts.sides);
+    enc.matchId = opts.matchId;
+    enc.playedAt = new Date().toISOString();
+    recordResultFromView(history, enc.id, opts.view);
+    while (history.encounters.length > opts.max) {
+      var old = history.encounters.shift();
+      log(7005, "History full: dropped " + old.id);
+    }
+    return enc;
+  }
+
   function clearResult(sheet, id) {
     var enc = findEncounter(sheet, id);
     if (!enc || !enc.result) { return false; }
@@ -254,6 +279,7 @@
     removeEncounter: removeEncounter,
     moveEncounter: moveEncounter,
     recordResultFromView: recordResultFromView,
+    recordFreeMatch: recordFreeMatch,
     clearResult: clearResult,
     teamScore: teamScore,
     nextPending: nextPending,
