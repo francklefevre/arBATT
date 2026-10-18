@@ -238,6 +238,15 @@ the app with `{ gameMinutes: 0 }` so the clock is finished immediately.
   tablette" form and reloads itself with ?code= (jsdom does not implement
   that navigation: tests stop at the validation / stored code).
 - 6 digits are guessable: recommend ARBATT_LIVE_TOKEN online.
+- 2026-10-18: token ENABLED on batt.club (~/arbatt-src/config/secret.json,
+  mode 600, git-ignored; the value is with the user, never in the repo).
+  Check: curl "https://batt.club/arbatt/api/live/_info?x=$RANDOM" ->
+  tokenRequired:true; POST without token -> 403. The OVH cluster may take
+  a few seconds to see a newly written file.
+- SW gotcha (v0.1.24): batt.club sends max-age=900 on assets, so the SW
+  must pre-cache with {cache:"reload"}, otherwise a stale file from the HTTP
+  cache lands in the new cache while the version label (app-config,
+  network-first) looks up to date.
 
 ## Testing the UI headlessly (jsdom)
 

@@ -29,6 +29,9 @@
  * the error paths must be testable:
  *  - opts.configStatus: HTTP status served for app-config.json (e.g. 404);
  *  - opts.configDrop: list of keys removed from the served config.
+ *
+ * 2026-10-18 (v0.1.24): opts.relayToken = protected relay (tokenRequired,
+ * POST answered 403 unless X-Arbatt-Token matches), as on batt.club.
  */
 
 const fs = require('fs');
@@ -92,10 +95,13 @@ function loadPage(page, query, configOverride, opts) {
       return jsonResponse(cfgStatus, cfgStatus === 200 ? cfg : null);
     }
     if (url.indexOf('api/live/_info') >= 0) {
-      return opts.relay ? jsonResponse(200, { relay: true, tokenRequired: false })
+      return opts.relay ? jsonResponse(200, { relay: true, tokenRequired: !!opts.relayToken })
         : jsonResponse(404, null);
     }
     if (url.indexOf('api/live/') >= 0 && init && init.method === 'POST') {
+      if (opts.relayToken && (init.headers || {})['X-Arbatt-Token'] !== opts.relayToken) {
+        return jsonResponse(403, { error: 'bad token' });
+      }
       win.__livePosts.push(JSON.parse(init.body));
       return jsonResponse(200, { seq: win.__livePosts.length });
     }

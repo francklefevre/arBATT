@@ -21,7 +21,7 @@
  * ---------------------------------------------------------------------------
  */
 
-var CACHE_VERSION = "arbatt-v0_1_23"; // 2026-10-18: bump (scrollable overlays)
+var CACHE_VERSION = "arbatt-v0_1_24"; // 2026-10-18: bump (shell fetched with cache:reload)
 
 var APP_SHELL = [
   "./",
@@ -57,8 +57,15 @@ var APP_SHELL = [
 
 self.addEventListener("install", function (event) {
   event.waitUntil(
+    // 2026-10-18 (v0.1.24): fetch the shell with cache:"reload" (bypass the
+    // browser HTTP cache). batt.club serves assets with max-age=900, so a
+    // plain addAll() run within 15 min of the previous visit stored the OLD
+    // style.css in the NEW cache: v0.1.23 was displayed (app-config is
+    // network-first) but the overlay CSS fix never reached the phone.
     caches.open(CACHE_VERSION).then(function (cache) {
-      return cache.addAll(APP_SHELL);
+      return cache.addAll(APP_SHELL.map(function (u) {
+        return new Request(u, { cache: "reload" });
+      }));
     }).then(function () { return self.skipWaiting(); })
   );
 });

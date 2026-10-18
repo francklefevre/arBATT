@@ -4,6 +4,30 @@ Free software developed by Franck LEFEVRE for K1 ( https://k1info.com ),
 with the help of his team of kind and playful robots.
 ============================================================================
 
+2026-10-18 23:10 — v0.1.24 — SW bypasses the HTTP cache + relay token on batt.club.
+  - Reported: the broadcast panel top was still unreachable although the app
+    showed v0.1.23. Probable cause: batt.club serves assets with
+    Cache-Control max-age=900; the SW install (cache.addAll) took the OLD
+    style.css from the browser HTTP cache into the NEW cache (the version
+    label comes from app-config.json, network-first, so it looked current).
+    Fix: sw.js pre-caches with new Request(u, {cache: "reload"}). Version
+    bump forces a fresh install on every device. Offline check PASS.
+  - Relay token ENABLED on batt.club at the user's request: random 16-char
+    ARBATT_LIVE_TOKEN in ~/arbatt-src/config/secret.json (mode 600, git-
+    ignored, never committed). Verified: _info tokenRequired:true, POST
+    without / with a bad token 403, with the token 200, GET (OBS, tablet)
+    still open, secret.json not reachable from the web (404). The OVH
+    cluster took a few seconds to see the new file.
+  - studio.js: a 403 now says "jeton absent ou incorrect — saisissez le
+    jeton du relais ci-dessous" (was "ERREUR (HTTP 403)").
+  - Tests: dom_harness opts.relayToken (protected relay); test_live_dom +2.
+    npm test 14/14 PASS.
+  - Version 0.1.24, SW arbatt-v0_1_24.
+  Deploy impact (checked): secret.json now exists on the server, outside
+  git: it survives "git pull" but must be kept if the server is rebuilt
+  (not covered by deploy/backup-restore.sh, which targets the Docker
+  deployment; noted in INSTALL.md). No other impact.
+
 2026-10-18 22:50 — v0.1.23 — Broadcast panel: top reachable on a phone.
   - Reported: "je ne peux pas accéder au haut de la page en mode Diffusion".
     Cause: .overlay centred its box with align-items:center in a fixed,

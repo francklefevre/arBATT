@@ -320,6 +320,21 @@ async function run() {
      H3.$('live-url').value === 'http://localhost/scoreboard.html?code=' + newCode,
     '"Nouveau code" (two taps) issues a new code and updates the addresses');
 
+  // ------------------------------- protected relay (token, v0.1.24)
+  const app4 = loadApp(null, { relay: true, relayToken: 's3cret' });
+  const H4 = helpers(app4.window);
+  await wait(20);
+  H4.click(H4.doc.querySelector('#screen-menu .open-live'));
+  await wait(20);
+  ok(!H4.$('live-token-row').classList.contains('hidden') &&
+     /jeton absent ou incorrect/.test(H4.$('live-status').textContent),
+    'protected relay: token field shown, 403 explained');
+  H4.$('live-token').value = 's3cret';
+  H4.$('live-token').dispatchEvent(new app4.window.Event('change', { bubbles: true }));
+  await wait(20);
+  ok(/actif/.test(H4.$('live-status').textContent) && app4.window.__livePosts.length > 0,
+    'with the right token the relay accepts the snapshots');
+
   console.log(fails === 0 ? 'ALL LIVE TESTS PASSED' : fails + ' LIVE TEST(S) FAILED');
   process.exit(fails === 0 ? 0 : 1);
 }

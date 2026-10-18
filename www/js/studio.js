@@ -641,6 +641,11 @@
         : "Relais réseau : indisponible sur cet hébergement (ni server.py, ni " +
           "PHP api/live.php) — l'affichage public ne fonctionne que dans ce " +
           "même navigateur (autre onglet / fenêtre).";
+    } else if (relayState.status === "error" && relayState.detail === "HTTP 403") {
+      // 2026-10-18 (v0.1.24): the relay token was enabled on batt.club; a
+      // bare "ERREUR (HTTP 403)" did not tell the referee what to do.
+      txt = "Relais réseau : jeton absent ou incorrect — saisissez le jeton " +
+        "du relais ci-dessous (fourni par l'administrateur).";
     } else if (relayState.status === "error") {
       txt = "Relais réseau : ERREUR (" + relayState.detail + ")";
     } else {

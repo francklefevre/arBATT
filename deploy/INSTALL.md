@@ -214,6 +214,12 @@ publier. Depuis v0.1.22 le canal est un **code à 6 chiffres** (appairage
 simplifié), donc **facile à deviner** : en ligne, le jeton est fortement
 recommandé. Pour l'exiger :
 
+> `secret.json` n'est **pas** dans git : il survit aux `git pull` mais doit
+> être recréé (ou sauvegardé à part) si le serveur est réinstallé. Le jeton
+> se saisit **une fois** par téléphone d'arbitre (panneau 📺 Diffusion,
+> champ « Jeton du relais ») ; OBS et les tablettes n'en ont pas besoin
+> (lecture libre).
+
 - **Lien symbolique / clone** (le relais trouve `config/` du dépôt) : mettez
   `"ARBATT_LIVE_TOKEN": "<jeton>"` dans `~/arbatt-src/config/secret.json`
   (copie de `secret.json.example`).
