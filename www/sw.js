@@ -21,7 +21,7 @@
  * ---------------------------------------------------------------------------
  */
 
-var CACHE_VERSION = "arbatt-v0_1_22"; // 2026-10-18: bump (6-digit pairing code)
+var CACHE_VERSION = "arbatt-v0_1_23"; // 2026-10-18: bump (scrollable overlays)
 
 var APP_SHELL = [
   "./",

@@ -164,6 +164,12 @@ the app with `{ gameMinutes: 0 }` so the clock is finished immediately.
 - **Shell gotcha**: `pkill -f "python3 server.py"` (or any pattern present in
   the current command line) kills the tool's own shell (exit 144). Use
   `timeout N` on background servers instead.
+- CSS gotcha (v0.1.23): never centre a modal box with align-items:center
+  in a fixed overlay: when taller than the screen its top is cut off and
+  unreachable. Use overflow-y:auto on the overlay + margin-block:auto on the
+  box. Check layouts on a phone viewport via CDP
+  (Emulation.setDeviceMetricsOverride 390x740 mobile, reuse the Cdp class
+  of tests/check_offline_chrome.py, measure getBoundingClientRect().top).
 - CSS gotcha: an absolutely positioned box at `left:50%` shrinks to the
   remaining half width -> use `width:max-content` for the banners.
 

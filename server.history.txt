@@ -4,6 +4,19 @@ Free software developed by Franck LEFEVRE for K1 ( https://k1info.com ),
 with the help of his team of kind and playful robots.
 ============================================================================
 
+2026-10-18 22:50 — v0.1.23 — Broadcast panel: top reachable on a phone.
+  - Reported: "je ne peux pas accéder au haut de la page en mode Diffusion".
+    Cause: .overlay centred its box with align-items:center in a fixed,
+    non-scrolling container; the panel (taller since the pairing code) was
+    cut ABOVE the screen (title at -61 px on 390x740) and could not scroll.
+  - Fix (style.css): .overlay overflow-y:auto + overscroll-behavior:contain,
+    box centred with margin-block:auto (top-aligned when taller than the
+    screen). Applies to every modal overlay (timer, service, cards, broadcast).
+  - Checked with a CDP script in headless Chrome (390x740 mobile): title at
+    24 px, "Fermer" reachable by scrolling. npm test 14/14 PASS.
+  - Version 0.1.23, SW arbatt-v0_1_23.
+  Deploy impact (checked): CSS only (www/), nothing else concerned.
+
 2026-10-18 22:30 — v0.1.22 — Simplified pairing with a 6-digit code.
   - The live channel is now a random 6-digit PAIRING CODE (was a UUID).
     live.js: PAIRING_CODE_DIGITS (protocol constant shared by app/overlay/

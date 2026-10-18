@@ -362,13 +362,22 @@ legend { color: var(--accent); padding: 0 6px; }
 }
 
 /* ---- Countdown timer overlay ---- */
+/* 2026-10-18 (v0.1.23): the overlay scrolls and its box is centred with
+   `margin: auto` instead of `align-items: center`. Reported on a phone: the
+   top of the (tall) broadcast panel was unreachable — a flex child centred
+   with align-items overflows ABOVE the container, where it cannot be
+   scrolled to, and the fixed overlay had no overflow scrolling at all.
+   Auto margins centre when there is room and fall back to top alignment
+   when the box is taller than the screen. Applies to every modal overlay. */
 .overlay {
   position: fixed; inset: 0;
   background: rgba(7, 11, 14, .92);
-  display: flex; align-items: center; justify-content: center;
+  display: flex; justify-content: center;
+  overflow-y: auto; overscroll-behavior: contain;
   z-index: 1000;
   padding: 24px;
 }
+.overlay > * { margin-block: auto; }
 .timer-box { text-align: center; width: 100%; max-width: 380px; }
 .timer-title { font-size: 1.4rem; margin: 0 0 18px; color: var(--accent); }
 
