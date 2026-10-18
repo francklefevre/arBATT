@@ -34,7 +34,9 @@
   var CONFETTI = 90;           // pieces spawned for a match win
 
   var params = new URLSearchParams(window.location.search);
-  var channel = params.get("ch") || "";
+  // 2026-10-18 (v0.1.22): the channel is the 6-digit pairing code ?code=
+  // (was ?ch=<uuid>).
+  var channel = Live.codeFromParams(params);
   var inObs = !!window.obsstudio;   // OBS Browser source exposes this object
 
   var prev = null;                  // previous snapshot (for diffing)
@@ -494,14 +496,15 @@
       return;
     }
 
-    if (!channel) {
-      arbattLog("ERROR", 8501, "Missing ?ch= parameter: nothing to display");
-      showWaiting("arBATT — paramètre <b>?ch=</b> manquant." +
-        "<small>Copiez l'adresse depuis le panneau « Diffusion / OBS » de l'arbitre.</small>");
+    if (!Live.isPairingCode(channel)) {
+      arbattLog("ERROR", 8501, "Missing or invalid ?code= parameter: nothing to display");
+      showWaiting("arBATT — code d'appairage manquant ou invalide." +
+        "<small>Adresse attendue : …/scoreboard.html?code=123456 (code à " +
+        Live.PAIRING_CODE_DIGITS + " chiffres du panneau « Diffusion / OBS » de l'arbitre).</small>");
       return;
     }
-    showWaiting("arBATT — en attente de l'arbitre…<small>canal " +
-      channel.slice(0, 8) + "… (ce message n'apparaît pas dans OBS)</small>");
+    showWaiting("arBATT — en attente de l'arbitre…<small>code " +
+      channel + " (ce message n'apparaît pas dans OBS)</small>");
 
     // 2026-10-11 (v0.1.20): shared with court.js (Live.subscribe).
     Live.subscribe(channel, params.get("relay") !== "0", onState);

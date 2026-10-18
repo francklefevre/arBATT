@@ -27,6 +27,7 @@
  * Browser storage (per device, via localStorage):
  *   arbatt.sheet.v1 — the current match sheet (see sheet.js for the format)
  *   arbatt.live.v1  — {channel, display:{scorebug, sheet}, token}
+ *                     channel = the 6-digit pairing code (since v0.1.22)
  *
  * Event number convention in this file: 9xxx.
  * ---------------------------------------------------------------------------
@@ -570,10 +571,17 @@
   }
 
   // ---------------------------------------------------------- broadcast panel
-  /** Absolute URL of a display page on the current channel. */
+  /**
+   * Absolute URL of a display page on the current channel.
+   * 2026-10-18 (v0.1.22): ?code=<6-digit pairing code> (was ?ch=<uuid>).
+   */
   function displayUrl(page) {
-    return new URL(page + "?ch=" + encodeURIComponent(liveCfg.channel),
-      window.location.href).href;
+    return Live.pairedUrl(page, liveCfg.channel, window.location.href);
+  }
+
+  /** "123456" -> "123 456" (easier to read aloud / type on the tablet). */
+  function spacedCode(code) {
+    return code.slice(0, 3) + " " + code.slice(3);
   }
 
   function overlayUrl() { return displayUrl(OVERLAY_PAGE); }
@@ -592,6 +600,7 @@
 
   /** Fill both display addresses (overlay + tablet) and the tablet QR code. */
   function renderDisplayUrls() {
+    $("live-code").textContent = spacedCode(liveCfg.channel);
     $("live-url").value = overlayUrl();
     $("court-url").value = displayUrl(COURT_PAGE);
     renderQr("court-qr", displayUrl(COURT_PAGE));
@@ -712,11 +721,12 @@
     });
     $("live-newch").addEventListener("click", function (ev) {
       confirmTap(ev.currentTarget, function () {
-        liveCfg.channel = S.uuid();
+        // 2026-10-18 (v0.1.22): a new pairing code (was a new UUID).
+        liveCfg.channel = Live.newPairingCode();
         saveLiveCfg();
         createPublisher();
         renderDisplayUrls();
-        arbattLog("LIVE", 9041, "New broadcast channel " + liveCfg.channel);
+        arbattLog("LIVE", 9041, "New pairing code " + liveCfg.channel);
         notify();
       });
     });
@@ -728,7 +738,16 @@
     history = loadSheetFrom(HISTORY_KEY);
     roster = loadRoster();
     liveCfg = loadJSON(LIVE_KEY) || {};
-    if (!liveCfg.channel) { liveCfg.channel = S.uuid(); }
+    // 2026-10-18 (v0.1.22): the channel is a 6-digit pairing code. A device
+    // still holding a former UUID channel gets a code (its old OBS / tablet
+    // URLs stop working: they must be re-paired with the code).
+    if (!Live.isPairingCode(liveCfg.channel)) {
+      if (liveCfg.channel) {
+        arbattLog("LIVE", 9051, "Former channel " + liveCfg.channel +
+          " replaced by a pairing code");
+      }
+      liveCfg.channel = Live.newPairingCode();
+    }
     liveCfg.display = liveCfg.display || { scorebug: true, sheet: false };
     liveCfg.token = liveCfg.token || "";
     // 2026-10-11 (v0.1.20): "matches" | "teams" (free-match results panel).

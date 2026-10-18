@@ -224,6 +224,15 @@ the app with `{ gameMinutes: 0 }` so the clock is finished immediately.
   (--screenshot) and decode the PNG with jsqr + pngjs (npm, in the
   scratchpad). jsdom re-serialises SVG: compare the path "d", not innerHTML.
 
+## Pairing code (v0.1.22)
+
+- The live channel IS a 6-digit pairing code (live.js helpers; former UUID
+  channels are migrated at studio boot). URLs: scoreboard.html?code=,
+  court.html?code=. court.html without a valid code shows the "Mode
+  tablette" form and reloads itself with ?code= (jsdom does not implement
+  that navigation: tests stop at the validation / stored code).
+- 6 digits are guessable: recommend ARBATT_LIVE_TOKEN online.
+
 ## Testing the UI headlessly (jsdom)
 
 `tests/test_ui_dom.js` loads the real `www/index.html` in jsdom and drives it.

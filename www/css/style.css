@@ -102,6 +102,8 @@ h2 { margin: 0 0 16px; }
   background: var(--card); color: var(--text);
   font-size: 1.1rem; text-align: left; cursor: pointer;
 }
+/* 2026-10-18 (v0.1.22): the "Mode tablette" entry is a link (<a>). */
+a.menu-item { text-decoration: none; }
 .menu-item:disabled { opacity: .45; cursor: not-allowed; }
 .menu-item:not(:disabled):active { background: var(--card-b); }
 .menu-icon { font-size: 1.6rem; }
@@ -511,5 +513,10 @@ legend { color: var(--accent); padding: 0 6px; }
 
 /* ---- Tablet QR code in the broadcast panel (2026-10-11, v0.1.21) ---- */
 /* White quiet zone is part of the SVG; the box only sizes it. */
+/* 2026-10-18 (v0.1.22): 6-digit pairing code of the broadcast panel. */
+.pair-code {
+  margin: 4px 0 10px; text-align: center; font-size: 2.6rem; font-weight: 800;
+  letter-spacing: .12em; font-variant-numeric: tabular-nums; color: var(--text);
+}
 .qr-box { margin: 8px auto; width: min(70vw, 260px); }
 .qr-box svg { display: block; width: 100%; height: auto; border-radius: 8px; }

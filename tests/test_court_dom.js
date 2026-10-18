@@ -24,12 +24,25 @@ function ok(cond, msg) {
 const wait = function (ms) { return new Promise(function (r) { setTimeout(r, ms || 0); }); };
 
 async function run() {
-  // Missing channel: explicit message, nothing else.
+  // 2026-10-18 (v0.1.22): no code -> "Mode tablette" code entry form.
   const bad = loadCourt('');
   await wait(10);
-  ok(/manquant/.test(bad.window.document.getElementById('ct-wait').textContent) &&
-     bad.window.document.getElementById('ct-main').classList.contains('hidden'),
-    'missing ?ch= explained on the tablet');
+  const B = bad.window.document;
+  ok(!B.getElementById('ct-pair').classList.contains('hidden') &&
+     B.getElementById('ct-main').classList.contains('hidden'),
+    'no code: the tablet asks for the pairing code');
+  B.getElementById('ct-code').value = '12a3';
+  B.getElementById('ct-code').dispatchEvent(new bad.window.Event('input', { bubbles: true }));
+  ok(B.getElementById('ct-code').value === '123', 'code entry keeps digits only');
+  B.getElementById('ct-pair').dispatchEvent(new bad.window.Event('submit', { bubbles: true, cancelable: true }));
+  ok(/6 chiffres/.test(B.getElementById('ct-pair-err').textContent) &&
+     bad.window.localStorage.getItem('arbatt.court.code') === null,
+    'too short a code is refused');
+  const badCode = loadCourt('?code=12345');
+  await wait(10);
+  ok(!badCode.window.document.getElementById('ct-pair').classList.contains('hidden') &&
+     /invalide/.test(badCode.window.document.getElementById('ct-pair-err').textContent),
+    'malformed ?code= asks again');
 
   const app = loadApp(null, { broadcast: true });
   await wait(10);
@@ -40,7 +53,9 @@ async function run() {
 
   // The broadcast panel gives the tablet address on the same channel.
   click(A.querySelector('#screen-menu .open-live'));
-  ok($a('court-url').value === 'http://localhost/court.html?ch=' + ch, 'tablet address in the broadcast panel');
+  ok($a('court-url').value === 'http://localhost/court.html?code=' + ch, 'tablet address in the broadcast panel');
+  ok($a('live-code').textContent === ch.slice(0, 3) + ' ' + ch.slice(3), 'pairing code shown in the panel');
+  ok(A.getElementById('menu-tablet').getAttribute('href') === 'court.html', 'menu offers the tablet mode');
   // 2026-10-11 (v0.1.21): QR code of the tablet address (hidden by default).
   ok($a('court-qr').classList.contains('hidden') && $a('court-qr').querySelector('svg'),
     'tablet QR code drawn, hidden until asked');
@@ -56,12 +71,14 @@ async function run() {
     'QR code encodes exactly the tablet address');
   click($a('live-close'));
 
-  const court = loadCourt('?ch=' + ch, { broadcast: true });
+  const court = loadCourt('?code=' + ch, { broadcast: true });
   const C = court.window.document;
   const $c = function (id) { return C.getElementById(id); };
   const side = function (s) { return C.getElementById('ct-side-' + s); };
   await wait(30);
-  ok(/attente de la partie/.test($c('ct-wait').textContent), 'tablet connected, waiting for a match');
+  ok(/attente de la partie/.test($c('ct-wait').textContent) &&
+     $c('ct-pair').classList.contains('hidden'), 'tablet connected, waiting for a match');
+  ok(court.window.localStorage.getItem('arbatt.court.code') === ch, 'code remembered on the tablet');
 
   // Start a free match and score.
   click(A.querySelector("#screen-menu [data-target='screen-newmatch']"));

@@ -60,6 +60,12 @@
           <span class="menu-icon">📺</span>
           <span class="menu-label">Diffusion / OBS</span>
         </button>
+        <!-- 2026-10-18 (v0.1.22): this device becomes the courtside display
+             (court.html asks for the referee's 6-digit pairing code). -->
+        <a class="menu-item" href="court.html" id="menu-tablet">
+          <span class="menu-icon">📟</span>
+          <span class="menu-label">Mode tablette <em>(écran bord de table)</em></span>
+        </a>
         <button class="menu-item" data-action="goto" data-target="screen-flow">
           <span class="menu-icon">📋</span>
           <span class="menu-label">Déroulé de la partie</span>
@@ -633,6 +639,12 @@
     <div class="overlay hidden" id="live" role="dialog" aria-modal="true">
       <div class="timer-box live-box">
         <h2 class="timer-title">📺 Diffusion / OBS</h2>
+        <!-- 2026-10-18 (v0.1.22): simplified pairing. This code is all a
+             display needs: OBS uses the address below (it contains the
+             code), the tablet opens arBATT > "Mode tablette" and types it. -->
+        <p class="dchooser-label">Code d'appairage
+          <small>(tablette : arBATT › Mode tablette)</small></p>
+        <p class="pair-code" id="live-code" aria-live="polite"></p>
         <p class="dchooser-label">Adresse de l'affichage public
           <small>(OBS : Source navigateur 1920×1080)</small></p>
         <input type="text" id="live-url" class="live-url" readonly />
@@ -673,7 +685,7 @@
           <input type="password" id="live-token" autocomplete="off" />
         </label>
         <div class="timer-controls">
-          <button class="btn-secondary" id="live-newch">🔀 Nouveau canal</button>
+          <button class="btn-secondary" id="live-newch">🔀 Nouveau code</button>
           <button class="btn-primary" id="live-close">Fermer</button>
         </div>
       </div>

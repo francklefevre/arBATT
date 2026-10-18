@@ -188,6 +188,44 @@ body {
 }
 :fullscreen #ct-fs { display: none; }
 
+/* ---- pairing code entry (v0.1.22, "Mode tablette") ---- */
+.ct-pair {
+  position: fixed;
+  inset: 0;
+  z-index: 5;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2.5vh;
+  padding: 6vw;
+  background: var(--bg);
+  text-align: center;
+  font-size: max(3vh, 18px);
+}
+.ct-pair h1 { margin: 0; font-size: max(6vh, 30px); }
+.ct-pair p { margin: 0; color: var(--muted); }
+.ct-pair small { display: block; font-size: .8em; }
+.ct-pair input {
+  width: min(80vw, 9ch);
+  padding: .2em .3em;
+  border: 2px solid var(--muted); border-radius: 14px;
+  background: var(--side); color: var(--text);
+  font: inherit; font-size: max(9vh, 44px); font-weight: 800;
+  text-align: center; letter-spacing: .1em;
+  font-variant-numeric: tabular-nums;
+  -webkit-user-select: text; user-select: text;
+}
+.ct-pair input:focus { outline: none; border-color: var(--accent); }
+.ct-pair-err { color: var(--red) !important; min-height: 1.2em; }
+.ct-pair button {
+  min-height: 56px; padding: 0 1.4em;
+  border: 0; border-radius: 14px;
+  background: var(--green); color: var(--text);
+  font: inherit; font-weight: 700;
+}
+.ct-pair-back { color: var(--muted); }
+
 /* ---- portrait tablet: sides stacked ---- */
 @media (orientation: portrait) {
   .ct-main { flex-direction: column; }

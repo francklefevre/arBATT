@@ -4,6 +4,32 @@ Free software developed by Franck LEFEVRE for K1 ( https://k1info.com ),
 with the help of his team of kind and playful robots.
 ============================================================================
 
+2026-10-18 22:30 — v0.1.22 — Simplified pairing with a 6-digit code.
+  - The live channel is now a random 6-digit PAIRING CODE (was a UUID).
+    live.js: PAIRING_CODE_DIGITS (protocol constant shared by app/overlay/
+    tablet: display pages do not load app-config.json), newPairingCode()
+    (crypto, rejection sampling), isPairingCode(), cleanPairingCode(),
+    codeFromParams(), pairedUrl(). Relays unchanged (CHANNEL_RE accepts it).
+  - Referee app: the broadcast panel shows the code in big ("123 456"),
+    addresses become scoreboard.html?code= / court.html?code=, "🔀 Nouveau
+    code" draws a new one (event 9041). A stored former UUID channel is
+    replaced by a code at startup (event 9051).
+  - Home menu: "📟 Mode tablette" -> court.html. Without / with a bad ?code=
+    the tablet shows a code entry form (digits only, last code pre-filled
+    from arbatt.court.code), then reloads as ?code=<code>; 🔢 button to
+    change code. Events 8710-8714. scoreboard.html reads ?code= (8501).
+  - Tests: court +6 (form, digits only, short code refused, bad ?code=,
+    code remembered, menu entry, code in panel), live +4 (helpers, new
+    code). npm test 14/14 PASS. Visual check in headless Chrome (portrait
+    and landscape).
+  - Security note: a 6-digit code is guessable -> README / INSTALL.md
+    recommend ARBATT_LIVE_TOKEN online.
+  - Version 0.1.22, SW arbatt-v0_1_22, app-config regenerated.
+  Deploy impact (checked): static files only (www/), no new parameter,
+  service, volume, route or data to back up; deploy.sh / docker / traefik
+  not concerned (git pull on batt.club). Existing OBS sources and tablets
+  must be re-paired once (old ?ch= URLs are no longer read).
+
 2026-10-11 22:05 — v0.1.21 — QR code of the courtside tablet address.
   - NEW www/js/vendor/qrcode.js: qrcode-generator 2.0.4 (Kazuhiko Arase,
     MIT) vendored unchanged (+ origin note) so the QR works offline; added

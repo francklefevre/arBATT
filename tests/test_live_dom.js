@@ -55,19 +55,19 @@ async function run() {
 
   ok(!!app.window.arbattStudio && !!app.window.arbattApp, 'studio + app bridges exposed');
   const ch = app.window.arbattStudio.getChannel();
-  ok(/^[0-9a-f-]{36}$/.test(ch), 'broadcast channel is a UUID');
+  ok(/^[0-9]{6}$/.test(ch), 'broadcast channel is a 6-digit pairing code');
 
   // Broadcast panel
   A.click(A.doc.querySelector('#screen-menu .open-live'));
   ok(A.visible('live'), 'broadcast panel opens from the menu');
-  ok(A.$('live-url').value === 'http://localhost/scoreboard.html?ch=' + ch,
+  ok(A.$('live-url').value === 'http://localhost/scoreboard.html?code=' + ch,
     'overlay URL carries the channel');
   ok(/indisponible/.test(A.$('live-status').textContent),
     'no relay on a static host is reported');
   A.click(A.$('live-close'));
 
   // ---------------------------------------------------------- overlay side
-  const ov = loadOverlay('?ch=' + ch, { broadcast: true });
+  const ov = loadOverlay('?code=' + ch, { broadcast: true });
   const O = helpers(ov.window);
   await wait(30);
   ok(O.visible('waiting') && /Connecté/.test(O.$('waiting').textContent),
@@ -210,7 +210,7 @@ async function run() {
   const app3 = loadApp(null, { broadcast: true });
   await wait(10);
   const H3 = helpers(app3.window);
-  const ov3 = loadOverlay('?ch=' + app3.window.arbattStudio.getChannel(), { broadcast: true });
+  const ov3 = loadOverlay('?code=' + app3.window.arbattStudio.getChannel(), { broadcast: true });
   const O3 = helpers(ov3.window);
   await wait(20);
   H3.click(H3.doc.querySelector('#screen-menu .open-live'));
@@ -302,6 +302,23 @@ async function run() {
   ok(app3.window.arbattStudio.getHistory() === null &&
      O3.doc.querySelectorAll('#sp-list .sp-row').length === 0,
     'history cleared (two taps) and emptied on the overlay');
+
+  // -------------------------------- pairing code helpers + new code (v0.1.22)
+  const L = app3.window.arbattLive;
+  const codes = Array.from({ length: 200 }, function () { return L.newPairingCode(); });
+  ok(codes.every(L.isPairingCode), 'generated pairing codes are 6 digits');
+  ok(!L.isPairingCode('12345') && !L.isPairingCode('1234567') &&
+     !L.isPairingCode('0f1e2d3c-0000-4000-8000-000000000000'),
+    'short / long / UUID channels are not pairing codes');
+  ok(L.cleanPairingCode(' 123 456 7') === '123456', 'typed code cleaned and cut');
+  const oldCode = app3.window.arbattStudio.getChannel();
+  H3.click(H3.doc.querySelector('#screen-menu .open-live'));
+  H3.click(H3.$('live-newch'));
+  H3.click(H3.$('live-newch'));
+  const newCode = app3.window.arbattStudio.getChannel();
+  ok(L.isPairingCode(newCode) && newCode !== oldCode &&
+     H3.$('live-url').value === 'http://localhost/scoreboard.html?code=' + newCode,
+    '"Nouveau code" (two taps) issues a new code and updates the addresses');
 
   console.log(fails === 0 ? 'ALL LIVE TESTS PASSED' : fails + ' LIVE TEST(S) FAILED');
   process.exit(fails === 0 ? 0 : 1);

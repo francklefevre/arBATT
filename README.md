@@ -94,6 +94,9 @@ qui applique les règles du *Manuel pratique d'arbitre de club* de la FFTT
 - 📱 **Écran bord de table** (*v0.1.20*) : une tablette posée près de l'aire
   de jeu affiche le **score courant en très grand** (noms, points, manches,
   service, balle de manche/match, chrono), sans animation.
+- 🔢 **Appairage par code à 6 chiffres** (*v0.1.22*) : l'appli de l'arbitre
+  affiche un code ; OBS ouvre simplement `…/scoreboard.html?code=123456` et
+  la tablette ouvre l'appli → **📟 Mode tablette** → saisit le code.
 - 🦇 Aux couleurs du club : logo **BATT-Man** (Bayard Argentan Tennis de Table).
 - 📋 **Déroulé de la partie** : les étapes d'une partie dans l'ordre, chacune
   avec un encadré « À ce stade je ne dois pas oublier ».
@@ -285,7 +288,7 @@ et, à la demande, la feuille de match ; l'affichage n'accepte aucune saisie.
  Téléphone de l'arbitre                  relais                 PC de diffusion (OBS)
  ┌──────────────────────┐   POST    ┌────────────────┐   SSE   ┌──────────────────────┐
  │ arBATT (index.html)  │ ────────▶ │ server.py  OU  │ ──────▶ │ Source navigateur :  │
- │ saisie des points    │           │ api/live.php   │         │ scoreboard.html?ch=… │
+ │ saisie des points    │           │ api/live.php   │         │ scoreboard.html?code=│
  └──────────────────────┘           │ /api/live/…    │         └──────────────────────┘
                                     └────────────────┘
         └──────── BroadcastChannel (même navigateur, même appareil) ─────────┘
@@ -329,17 +332,25 @@ permanence — sans souci pour quelques sources OBS, à surveiller au-delà.
 2. Sur le **téléphone de l'arbitre** (même Wi-Fi), ouvrez
    `http://192.168.1.20:8080/` → menu **📺 Diffusion / OBS** : l'état du relais
    doit indiquer « **actif ✓** ». Copiez l'**adresse de l'affichage public**
-   (`…/scoreboard.html?ch=<uuid>`).
+   (`…/scoreboard.html?code=123456`).
 3. Dans **OBS** : *Sources* → **+** → **Navigateur** → URL = l'adresse copiée
    (en remplaçant l'IP par `localhost` si OBS tourne sur ce PC), **largeur 1920,
    hauteur 1080**. Le fond est transparent : placez la source au-dessus de la
    caméra.
 4. Arbitrez normalement : l'overlay suit en direct.
 
-> Le canal est un **UUID** propre à chaque téléphone (mémorisé). Le bouton
-> **🔀 Nouveau canal** en génère un autre (l'ancienne adresse cesse alors de
-> recevoir). Pour plusieurs tables, chaque arbitre a son propre canal : une
-> source OBS par table.
+> **Appairage par code (*v0.1.22*).** Le canal est un **code à 6 chiffres**
+> propre à chaque téléphone (tiré au hasard, mémorisé), affiché en grand en
+> haut du panneau **📺 Diffusion**. C'est la seule chose à transmettre :
+> l'adresse OBS le contient (`scoreboard.html?code=123456`) et la tablette le
+> saisit (voir « Écran bord de table »). Le bouton **🔀 Nouveau code** en tire
+> un autre (les écrans appairés avec l'ancien cessent alors de recevoir).
+> Pour plusieurs tables, chaque arbitre a son propre code : une source OBS
+> par table. Un téléphone qui avait un ancien canal UUID (≤ v0.1.21) reçoit
+> automatiquement un code : réappairez OBS et les tablettes.
+>
+> ⚠ Un code à 6 chiffres se **devine** bien plus facilement qu'un UUID :
+> en ligne, protégez la publication par un **jeton** (`ARBATT_LIVE_TOKEN`).
 
 ### Ce que montre l'affichage public
 
@@ -381,13 +392,13 @@ permanence — sans souci pour quelques sources OBS, à surveiller au-delà.
 
 Le panneau **📺 Diffusion** (menu, tableau de marque, feuille de match) permet de
 copier/ouvrir l'adresse, de choisir ce qui est affiché (score / feuille), de
-saisir le **jeton** si le relais est protégé et de changer de canal.
+saisir le **jeton** si le relais est protégé et de changer de code.
 
 ### Paramètres d'URL de `scoreboard.html`
 
 | Paramètre | Défaut | Rôle |
 |-----------|--------|------|
-| `ch` | *(obligatoire)* | Canal (fourni par le panneau *Diffusion*). |
+| `code` | *(obligatoire)* | Code d'appairage à 6 chiffres (panneau *Diffusion* ; remplace `ch=<uuid>` depuis v0.1.22). |
 | `pos` | `bl` | Coin du bandeau : `bl`, `br`, `tl`, `tr` ou `bc` (bas centre). |
 | `scale` | `1` | Facteur de taille du bandeau (p. ex. `1.3`). |
 | `bg` | transparent | Couleur de fond, p. ex. `00b140` pour une incrustation (chroma key). |
@@ -400,11 +411,19 @@ Hors OBS, la page affiche un message d'aide (« en attente de l'arbitre » /
 ### Écran bord de table (tablette) — `court.html` (*v0.1.20*)
 
 Pour les joueurs et le public autour de l'aire de jeu : le **score courant en
-très grand**, lisible à plusieurs mètres. Panneau **📺 Diffusion** →
-« Écran bord de table » → **Copier** l'adresse et l'ouvrir sur la tablette,
-ou bien **🔳 QR code** et le **scanner avec l'appareil photo de la tablette**
-(*v0.1.21* ; QR généré dans l'appli, fonctionne hors connexion). Même canal
-que l'overlay OBS ; les deux peuvent fonctionner en même temps.
+très grand**, lisible à plusieurs mètres. Même canal que l'overlay OBS ; les
+deux peuvent fonctionner en même temps. Pour appairer la tablette :
+
+- **Le plus simple (*v0.1.22*)** : sur la tablette, ouvrez l'appli
+  (p. ex. `https://batt.club/arbatt/`) → menu **📟 Mode tablette** → saisissez
+  le **code à 6 chiffres** affiché dans le panneau **📺 Diffusion** de
+  l'arbitre → **Afficher le score**. La page devient
+  `court.html?code=123456` (rechargement / favori restent appairés) et le
+  dernier code est pré-rempli la fois suivante. Le bouton **🔢** (en bas à
+  droite) permet de changer de code.
+- Ou : panneau **📺 Diffusion** → « Écran bord de table » → **Copier**
+  l'adresse, ou **🔳 QR code** à **scanner avec l'appareil photo de la
+  tablette** (*v0.1.21* ; QR généré dans l'appli, fonctionne hors connexion).
 
 - Affiche : noms, **points**, manches gagnées, point de service, « balle de
   manche / de match », contexte (manche, décisive, accélération, rencontre
@@ -421,7 +440,7 @@ que l'overlay OBS ; les deux peuvent fonctionner en même temps.
 
 | Paramètre | Défaut | Rôle |
 |-----------|--------|------|
-| `ch` | *(obligatoire)* | Canal (fourni par le panneau *Diffusion*). |
+| `code` | *(demandé à l'écran)* | Code d'appairage à 6 chiffres ; absent ou invalide → formulaire « Mode tablette » (v0.1.22, remplace `ch=<uuid>`). |
 | `flip` | mémorisé, sinon `0` | `flip=1` : inverse gauche et droite. |
 | `relay` | `1` | `relay=0` : n'écoute que le BroadcastChannel (même navigateur). |
 | `demo` | — | `demo=1` : partie fictive animée pour vérifier la tablette. |

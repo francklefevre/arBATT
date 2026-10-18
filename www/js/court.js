@@ -18,6 +18,12 @@
  * localStorage on this tablet only). The display ignores the referee's
  * "show score on screen" switch: that one is for the broadcast.
  *
+ * 2026-10-18 (v0.1.22): simplified pairing ("Mode tablette"). The channel is
+ * the referee's 6-digit pairing code, read from ?code=. Without a valid code
+ * the page shows a code entry form; submitting it reloads the page as
+ * ?code=<code> (so a reload / bookmark stays paired). The last code is kept
+ * on the tablet (arbatt.court.code) to pre-fill the form.
+ *
  * Event number convention in this file: 87xx.
  * ---------------------------------------------------------------------------
  */
@@ -28,11 +34,12 @@
   var Live = window.arbattLive;
 
   var FLIP_KEY = "arbatt.court.flip";   // per-tablet convenience only
+  var CODE_KEY = "arbatt.court.code";   // last pairing code (form pre-fill)
   var TIMER_WARN_S = 10;                // countdown turns red below this
   var TICK_MS = 250;                    // local countdown refresh
 
   var params = new URLSearchParams(window.location.search);
-  var channel = params.get("ch") || "";
+  var channel = Live.codeFromParams(params);   // 2026-10-18: was ?ch=<uuid>
   var flip = readFlip();
   var last = null;                      // last snapshot (for flip / timer)
   var timerSnap = null;                 // Live.receiveTimer() result
@@ -144,6 +151,69 @@
     w.classList.toggle("hidden", !txt);
   }
 
+  // ------------------------------------------------------- pairing code
+  // 2026-10-18 (v0.1.22).
+
+  function readStored(key) {
+    try {
+      return window.localStorage.getItem(key) || "";
+    } catch (e) {
+      arbattLog("WARN", 8710, "Cannot read " + key + ": " + e);
+      return "";
+    }
+  }
+
+  function storeCode(code) {
+    try {
+      window.localStorage.setItem(CODE_KEY, code);
+    } catch (e) {
+      arbattLog("WARN", 8711, "Cannot store " + CODE_KEY + ": " + e);
+    }
+  }
+
+  /** Show the code entry form; `err` = message explaining why (or ""). */
+  function showPairing(err) {
+    $("ct-main").classList.add("hidden");
+    $("ct-over").classList.add("hidden");
+    showWait("");
+    $("ct-pair").classList.remove("hidden");
+    $("ct-pair-err").textContent = err || "";
+    var input = $("ct-code");
+    input.value = input.value || readStored(CODE_KEY);
+    input.focus();
+    arbattLog("UI", 8712, "Pairing code requested" + (err ? " (" + err + ")" : ""));
+  }
+
+  /** Validate the typed code; reload the page paired with it. */
+  function onPairSubmit(ev) {
+    ev.preventDefault();
+    var code = Live.cleanPairingCode($("ct-code").value);
+    if (!Live.isPairingCode(code)) {
+      $("ct-pair-err").textContent = "Le code comporte " +
+        Live.PAIRING_CODE_DIGITS + " chiffres.";
+      arbattLog("WARN", 8713, "Rejected pairing code entry");
+      return;
+    }
+    storeCode(code);
+    arbattLog("UI", 8714, "Pairing with code " + code);
+    params.set("code", code);
+    window.location.search = params.toString();
+  }
+
+  function bindPairing() {
+    $("ct-pair").addEventListener("submit", onPairSubmit);
+    // Digits only, as typed ("123 456" pasted -> "123456").
+    $("ct-code").addEventListener("input", function (ev) {
+      var clean = Live.cleanPairingCode(ev.target.value);
+      if (ev.target.value !== clean) { ev.target.value = clean; }
+      $("ct-pair-err").textContent = "";
+    });
+    $("ct-recode").addEventListener("click", function (ev) {
+      ev.stopPropagation();
+      showPairing("");
+    });
+  }
+
   // ------------------------------------------------- full screen + awake
   function goFullScreen() {
     var d = document.documentElement;
@@ -175,14 +245,16 @@
       goFullScreen();
     });
     // A tap anywhere: full screen + wake lock (both need a user gesture on
-    // some browsers).
-    document.body.addEventListener("click", function () {
+    // some browsers). 2026-10-18: not while typing the pairing code.
+    document.body.addEventListener("click", function (ev) {
+      if (ev.target.closest("#ct-pair")) { return; }
       goFullScreen();
       if (!wakeLock) { keepAwake(); }
     });
     document.addEventListener("visibilitychange", function () {
       if (document.visibilityState === "visible") { wakeLock = null; keepAwake(); }
     });
+    bindPairing();
     keepAwake();
     setInterval(tickTimer, TICK_MS);
 
@@ -191,17 +263,16 @@
       arbattLog("BOOT", 8706, "Courtside display demo mode");
       return;
     }
-    if (!channel) {
-      arbattLog("ERROR", 8707, "Missing ?ch= parameter: nothing to display");
-      showWait("Paramètre ?ch= manquant : copiez l'adresse « Écran bord de table » " +
-        "depuis le panneau 📺 Diffusion de l'arbitre.");
-      $("ct-main").classList.add("hidden");
+    // 2026-10-18 (v0.1.22): no / bad code -> ask for it (was an error text).
+    if (!Live.isPairingCode(channel)) {
+      showPairing(channel ? "Code « " + channel + " » invalide." : "");
       return;
     }
-    showWait("En attente de l'arbitre… (canal " + channel.slice(0, 8) + "…)");
+    storeCode(channel);
+    showWait("En attente de l'arbitre… (code " + channel + ")");
     $("ct-main").classList.add("hidden");
     Live.subscribe(channel, params.get("relay") !== "0", onState);
-    arbattLog("BOOT", 8708, "Courtside display on channel " + channel + " (flip=" + flip + ")");
+    arbattLog("BOOT", 8708, "Courtside display on code " + channel + " (flip=" + flip + ")");
   });
 
   // Exposed for tests / debugging from the console.

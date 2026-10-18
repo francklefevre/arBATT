@@ -41,6 +41,15 @@
   var PROTOCOL = 1;
   var BC_PREFIX = "arbatt-live-";
   var API = "api/live/";
+  // 2026-10-18 (v0.1.22): simplified pairing. The live channel id is now a
+  // short numeric PAIRING CODE chosen by the referee's app (was a UUID, too
+  // long to type on a tablet). The code is the only thing a display needs:
+  // OBS opens scoreboard.html?code=<code>, the tablet types it in court.html.
+  // It is a protocol constant shared by the three pages (the display pages do
+  // not load app-config.json), hence not in param.json. Changing it changes
+  // every paired URL. The relays already accept it (CHANNEL_RE: [A-Za-z0-9_-]).
+  var PAIRING_CODE_DIGITS = 6;
+  var CODE_PARAM = "code";      // URL parameter carrying the pairing code
 
   function log(tag, eid, msg) {
     if (typeof global.arbattLog === "function") { global.arbattLog(tag, eid, msg); }
@@ -48,6 +57,45 @@
 
   /** Fresh UUID, delegated to the sheet module's implementation (single source). */
   function uuid() { return global.arbattSheet.uuid(); }
+
+  /**
+   * Fresh random pairing code of PAIRING_CODE_DIGITS decimal digits (leading
+   * zeros allowed). Uses crypto.getRandomValues with rejection sampling so
+   * every digit is uniform (bytes >= 250 are drawn again).
+   */
+  function newPairingCode() {
+    var out = "";
+    var buf = new Uint8Array(1);
+    while (out.length < PAIRING_CODE_DIGITS) {
+      global.crypto.getRandomValues(buf);
+      if (buf[0] < 250) { out += String(buf[0] % 10); }
+    }
+    return out;
+  }
+
+  /** True when `s` is a well-formed pairing code (exactly N digits). */
+  function isPairingCode(s) {
+    return typeof s === "string" &&
+      new RegExp("^[0-9]{" + PAIRING_CODE_DIGITS + "}$").test(s);
+  }
+
+  /**
+   * Keep only the digits of a typed code ("123 456" -> "123456"), cut to the
+   * code length. Used by the tablet's code entry.
+   */
+  function cleanPairingCode(s) {
+    return String(s || "").replace(/[^0-9]/g, "").slice(0, PAIRING_CODE_DIGITS);
+  }
+
+  /** Pairing code of a display page URL (URLSearchParams), "" when absent. */
+  function codeFromParams(params) {
+    return params.get(CODE_PARAM) || "";
+  }
+
+  /** Absolute URL of a display page (relative to `base`) for a code. */
+  function pairedUrl(page, code, base) {
+    return new URL(page + "?" + CODE_PARAM + "=" + encodeURIComponent(code), base).href;
+  }
 
   /**
    * Probe the HTTP relay. Resolves with {relay, tokenRequired} or null when
@@ -370,6 +418,12 @@
 
   var api = {
     PROTOCOL: PROTOCOL,
+    PAIRING_CODE_DIGITS: PAIRING_CODE_DIGITS,
+    newPairingCode: newPairingCode,
+    isPairingCode: isPairingCode,
+    cleanPairingCode: cleanPairingCode,
+    codeFromParams: codeFromParams,
+    pairedUrl: pairedUrl,
     matchSnapshot: matchSnapshot,
     detectRelay: detectRelay,
     LivePublisher: LivePublisher,

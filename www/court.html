@@ -20,8 +20,13 @@
   never accepts score input. Tapping the screen goes full screen; the screen
   is kept awake (Wake Lock) where the browser allows it.
 
-  URL parameters (all optional except ch):
-    ch=<channel>   channel id shown in the referee app's "Diffusion" panel
+  2026-10-18 (v0.1.22): simplified pairing. Opened without a code (e.g.
+  from the app menu "Mode tablette"), the page asks for the referee's
+  6-digit pairing code, then reloads itself as court.html?code=<code>.
+
+  URL parameters (all optional):
+    code=<6 digits> pairing code shown in the referee app's "Diffusion"
+                   panel (asked on screen when absent)
     flip=1         swap left/right (tablet facing the umpire); the ⇄ button
                    does the same and is remembered on the tablet
     relay=0        do not open the network relay stream (same-browser only)
@@ -76,8 +81,21 @@
   <!-- Waiting / connection messages. -->
   <div class="ct-wait" id="ct-wait"></div>
 
+  <!-- 2026-10-18 (v0.1.22): pairing code entry ("Mode tablette"). -->
+  <form class="ct-pair hidden" id="ct-pair" autocomplete="off" novalidate>
+    <h1>📟 Mode tablette</h1>
+    <p>Saisissez le code à 6 chiffres affiché par l'arbitre
+      <small>(arBATT › 📺 Diffusion / OBS)</small></p>
+    <input type="text" id="ct-code" inputmode="numeric" pattern="[0-9]*"
+           maxlength="7" placeholder="000000" aria-label="Code d'appairage" />
+    <p class="ct-pair-err" id="ct-pair-err" role="alert"></p>
+    <button type="submit" id="ct-pair-go">Afficher le score</button>
+    <a href="index.html" class="ct-pair-back">← Retour à l'application</a>
+  </form>
+
   <!-- Discreet tools (hidden in full screen except the swap). -->
   <div class="ct-tools">
+    <button type="button" id="ct-recode" title="Changer de code">🔢</button>
     <button type="button" id="ct-flip" title="Inverser gauche / droite">⇄</button>
     <button type="button" id="ct-fs" title="Plein écran">⛶</button>
   </div>

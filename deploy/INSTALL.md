@@ -209,8 +209,10 @@ relais PHP `api/live.php` (+ `api/.htaccess`) sont livrés avec `www/` : **rien
 
 ### Protéger la publication par un jeton (recommandé en ligne)
 
-Sans jeton, toute personne connaissant l'adresse d'un canal (un UUID, donc
-difficile à deviner) pourrait y publier. Pour l'exiger :
+Sans jeton, toute personne connaissant l'adresse d'un canal pourrait y
+publier. Depuis v0.1.22 le canal est un **code à 6 chiffres** (appairage
+simplifié), donc **facile à deviner** : en ligne, le jeton est fortement
+recommandé. Pour l'exiger :
 
 - **Lien symbolique / clone** (le relais trouve `config/` du dépôt) : mettez
   `"ARBATT_LIVE_TOKEN": "<jeton>"` dans `~/arbatt-src/config/secret.json`

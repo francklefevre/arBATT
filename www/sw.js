@@ -21,7 +21,7 @@
  * ---------------------------------------------------------------------------
  */
 
-var CACHE_VERSION = "arbatt-v0_1_21"; // 2026-10-11: bump (tablet QR code)
+var CACHE_VERSION = "arbatt-v0_1_22"; // 2026-10-18: bump (6-digit pairing code)
 
 var APP_SHELL = [
   "./",
@@ -98,7 +98,7 @@ self.addEventListener("fetch", function (event) {
 
   // Everything else: cache-first, then network (and cache the result).
   // 2026-10-07 (v0.1.14): lookups IGNORE the query string. The overlay is
-  // opened as scoreboard.html?ch=<uuid> (or ?demo=1) while the pre-cached
+  // opened as scoreboard.html?code=<pairing code> (or ?demo=1) while the pre-cached
   // entry is scoreboard.html: an exact match failed and, offline, the page
   // did not open (found by tests/check_offline_chrome.py). For the same
   // reason, responses to URLs WITH a query are not stored (one copy per
