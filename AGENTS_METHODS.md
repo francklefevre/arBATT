@@ -243,6 +243,11 @@ the app with `{ gameMinutes: 0 }` so the clock is finished immediately.
   Check: curl "https://batt.club/arbatt/api/live/_info?x=$RANDOM" ->
   tokenRequired:true; POST without token -> 403. The OVH cluster may take
   a few seconds to see a newly written file.
+- SW update path (v0.1.25): app.js reloads on "controllerchange" (banner
+  instead when a match is in progress). To replay an upgrade: git archive
+  each version into the scratchpad, serve it with a mimic of OVH headers
+  (root switched per request), drive Chrome via CDP on the same profile;
+  give each version distinct file mtimes (304 trap of SimpleHTTPRequestHandler).
 - SW gotcha (v0.1.24): batt.club sends max-age=900 on assets, so the SW
   must pre-cache with {cache:"reload"}, otherwise a stale file from the HTTP
   cache lands in the new cache while the version label (app-config,

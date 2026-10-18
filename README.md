@@ -254,6 +254,17 @@ cd ~/arbatt-src && git pull
 > Hors-ligne : le service worker ne s'installe qu'en **HTTPS** ou sur
 > **localhost** (pas sur `http://<IP>`).
 
+> **Mises à jour de l'appli (*v0.1.25*)** : après un déploiement, la nouvelle
+> version est téléchargée à la première ouverture et la page **se recharge
+> d'elle-même** (≈ 1 s). Si une **partie est en cours**, elle n'est pas
+> rechargée (la partie serait perdue) : un bandeau jaune « Nouvelle version
+> prête — Recharger » s'affiche ; rechargez entre deux parties.
+> Le numéro de version en haut à droite est lu sur le réseau : il peut
+> devancer le code réellement exécuté jusqu'à ce rechargement.
+> En dernier recours (téléphone bloqué sur une vieille version) : Chrome →
+> ⋮ → Paramètres → Paramètres des sites → Toutes les données → batt.club →
+> **Effacer** (efface aussi le jeton, la feuille et les équipes de cet appareil).
+
 1. Ouvrez l'URL (ou scannez le QR code) sur un smartphone.
 2. *(facultatif)* « **Installer l'application** » depuis le menu du navigateur
    pour l'usage hors-ligne et plein écran.

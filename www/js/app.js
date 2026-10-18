@@ -1006,8 +1006,41 @@
   };
 
   // ----------------------------------------------------- service worker setup
+  /**
+   * 2026-10-18 (v0.1.25): apply a new version as soon as its service worker
+   * takes control. Reported on batt.club: after a deployment the phone kept
+   * running the OLD code (old 403 message, old CSS) while the header already
+   * showed the new version (app-config.json is network-first): the page
+   * being displayed was served by the old cache, and only the NEXT load used
+   * the new one. sw.js calls skipWaiting + clients.claim, so
+   * "controllerchange" fires on this page when an update is activated:
+   * reload once, unless a match is being scored (not persisted: it would be
+   * lost) — then show the #update-ready banner instead. Not on the very
+   * first install (no previous controller: the page is already current).
+   */
+  function watchServiceWorkerUpdate() {
+    var hadController = !!navigator.serviceWorker.controller;
+    var reloading = false;
+    document.getElementById("update-reload").addEventListener("click", function () {
+      arbattLog("SW", 2012, "Reload requested from the update banner");
+      window.location.reload();
+    });
+    navigator.serviceWorker.addEventListener("controllerchange", function () {
+      if (!hadController || reloading) { return; }
+      if (match && !match.view().finished) {
+        arbattLog("SW", 2013, "New version active, match in progress: reload deferred");
+        document.getElementById("update-ready").classList.remove("hidden");
+        return;
+      }
+      reloading = true;
+      arbattLog("SW", 2014, "New version active: reloading the page");
+      window.location.reload();
+    });
+  }
+
   function registerServiceWorker() {
     if (!("serviceWorker" in navigator)) { return; }
+    watchServiceWorkerUpdate();
     navigator.serviceWorker.register("sw.js")
       .then(function () { arbattLog("SW", 2005, "Service worker registered"); })
       .catch(function (e) { arbattLog("WARN", 2006, "SW registration failed: " + e); });

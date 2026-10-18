@@ -4,6 +4,31 @@ Free software developed by Franck LEFEVRE for K1 ( https://k1info.com ),
 with the help of his team of kind and playful robots.
 ============================================================================
 
+2026-10-18 23:40 — v0.1.25 — Updates applied by themselves (auto-reload).
+  - Reported: "c'est pareil" + "Relais réseau : ERREUR (HTTP 403)" — that
+    text no longer exists in v0.1.24, so the phone ran OLD code.
+  - Reproduced with a CDP replay against a server mimicking OVH
+    (max-age=900 on assets, no-cache sw.js, protected relay), going through
+    the user's versions 3010f43 -> 276f53f -> 80eccb4: up to v0.1.23 the new
+    cache was filled with stale files (the phone never got even the v0.1.22
+    pairing code); with v0.1.24 the new code runs only on the SECOND load
+    after a deployment (the displayed page is still served by the old
+    cache while the header already shows the new version).
+  - Fix (app.js watchServiceWorkerUpdate): on "controllerchange" (sw.js does
+    skipWaiting + clients.claim) the page reloads once — events 2014; if a
+    match is being scored (not persisted) no reload: #update-ready banner
+    with a "Recharger" button (2013, 2012). Not on the first install.
+  - Verified by replay: v0.1.25 -> fake v0.1.26 needs ONE load (auto reload
+    within ~1 s); match in progress -> banner, score screen kept, Recharger
+    loads the new version. Replay gotcha: Python's static server answers
+    304 on If-Modified-Since with 1-s mtimes -> give each version distinct
+    mtimes (touch -d) or the browser sees an "unchanged" sw.js.
+  - npm test 14/14 PASS, offline check PASS. README: update behaviour + last-
+    resort site-data purge. Version 0.1.25, SW arbatt-v0_1_25.
+  Deploy impact (checked): static files only. This deployment still needs
+  TWO loads on a phone (its current page has no listener yet); automatic
+  from the next one on.
+
 2026-10-18 23:10 — v0.1.24 — SW bypasses the HTTP cache + relay token on batt.club.
   - Reported: the broadcast panel top was still unreachable although the app
     showed v0.1.23. Probable cause: batt.club serves assets with

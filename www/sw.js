@@ -21,7 +21,7 @@
  * ---------------------------------------------------------------------------
  */
 
-var CACHE_VERSION = "arbatt-v0_1_24"; // 2026-10-18: bump (shell fetched with cache:reload)
+var CACHE_VERSION = "arbatt-v0_1_25"; // 2026-10-18: bump (auto-reload on update)
 
 var APP_SHELL = [
   "./",

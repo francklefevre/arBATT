@@ -65,6 +65,17 @@ body {
   font-size: .9rem;
   font-weight: 600;
 }
+/* 2026-10-18 (v0.1.25): "new version ready" banner (see app.js). */
+.update-ready {
+  padding: 10px 16px;
+  background: var(--accent); color: #111;
+  font-size: .9rem; font-weight: 600;
+}
+.update-ready button {
+  margin-left: 8px; padding: 6px 12px; border: 0; border-radius: 8px;
+  background: #111; color: #fff; font-weight: 700;
+}
+.update-ready small { display: block; font-weight: 400; }
 
 .app-footer {
   padding: 8px 16px;

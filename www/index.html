@@ -29,6 +29,14 @@
   <!-- 2026-10-11 (v0.1.15): shown by app.js when app-config.json is missing
        or invalid (replaces the former silent fallback on built-in defaults). -->
   <div class="config-error hidden" id="config-error" role="alert"></div>
+  <!-- 2026-10-18 (v0.1.25): a new version took over while a match is being
+       scored: the page is NOT reloaded automatically (the match in progress
+       is not persisted); the referee reloads when convenient. -->
+  <div class="update-ready hidden" id="update-ready" role="status">
+    Nouvelle version prête.
+    <button type="button" id="update-reload">Recharger</button>
+    <small>(la partie en cours serait perdue : rechargez entre deux parties)</small>
+  </div>
 
   <main id="main">
 
